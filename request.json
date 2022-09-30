@@ -1,0 +1,8 @@
+{
+"stock_list": ["MSFT","AAPL","K","GOOGL","PB","AMZN","COST","TGT","MA","META","VZ","NVS","NOW","V","BUD","SONY","SNY","RY","VRTX"],
+"high_risk": "False",
+"desired_expected_return": 10,
+"threshold":6,
+"optimal_number_of_stocks":6,
+"investing_amount":10000
+}

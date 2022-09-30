@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %} {% endblock %} - Stock Portfolio App</title>
+    <style>
+        .message {
+            width: 50%;
+            padding: 10px;
+            margin: 5px;
+            background-color: #f3f3f3
+        }
+
+        nav a {
+            color: #d64161;
+            font-size: 3em;
+            margin-left: 50px;
+            text-decoration: none;
+        }
+
+        .select {
+            width: 100%;
+            min-width: 15ch;
+            max-width: 30ch;
+            border: 1px solid var(--select-border);
+            border-radius: 0.25em;
+            padding: 0.25em 0.5em;
+            font-size: 1.25rem;
+            cursor: pointer;
+            line-height: 1.1;
+            background-color: #fff;
+            background-image: linear-gradient(to top, #f9f9f9, #fff 33%);
+        }
+
+        .select {
+            align-items: center;
+        }
+
+        .select:after {
+            justify-self: end;
+        }
+    </style>
+    {{ toastr.include_jquery() }}
+    {{ toastr.include_toastr_css() }}
+    {{ toastr.message() }}
+</head>
+
+<body>
+    <nav>
+        <a href="{{ url_for('index') }}">Optimized Result</a>
+        <a href="{{ url_for('create') }}">Build Portfolio</a>
+        <a href="{{ url_for('portfolio') }}">Portfolio Table</a>
+    </nav>
+    <hr>
+    <div class="content">
+        {% block content %} {% endblock %}
+    </div>
+    {{ toastr.include_toastr_js() }}
+</body>
+
+</html>
