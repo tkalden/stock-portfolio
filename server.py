@@ -3,14 +3,44 @@ import helper
 from flask import Flask, render_template, request, url_for, flash, redirect
 from flask_toastr import Toastr
 import pandas as pd
+import numpy as np
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+# For data manipulation
+from finvizfinance.group.overview import Overview as Goverview
+from finvizfinance.group.valuation import Valuation as Gvaluation
+
+from finvizfinance.screener.financial import Financial
+from finvizfinance.screener.ticker import Ticker
+from finvizfinance.screener.technical import Technical
+from finvizfinance.screener.ownership import Ownership
+from finvizfinance.screener.valuation import Valuation
+from finvizfinance.screener.performance import Performance
+from finvizfinance.screener.overview import Overview
+from finvizfinance.screener.technical import Technical
+
+foverview = Overview()
+fvaluation = Valuation()
+fownership = Ownership()
+ftechnical = Technical()
+fperformance = Performance()
+financial = Financial()
+ticker = Ticker()
+gOverview = Goverview()
+gValuation = Gvaluation()
 
 toastr = Toastr()
 
 app = Flask(__name__)
 app.secret_key = "e0af172472bfdc4bc8292763f86e3abe0e2eb9a8cf68d12f"
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
 toastr.init_app(app)
 
-meta_dictionary = stockValueExtract.get_gs_meta()
 colours = ['Red', 'Blue', 'Black', 'Orange']
 optimized_result = {"Stock": ['', ''], "Optimized Expected Return": [
     '', ''], "Optimized Weight": ['', ''], 'Total Cost': ['', ''], 'Number of Shares': ['', '']}
@@ -22,21 +52,42 @@ stock_type = ''
 sector_index = []
 index_lists = []
 sector_lists = []
-stock_data = []
+df_dict = {}
+selectedList = []
 
-@app.route('/',methods=["POST", "GET"])
+@app.route('/',methods=['POST', 'GET'])
 def index():
-    index_lists = helper.get_index()
-    sector_lists = helper.get_sector()
-    return render_template('index.html', index_lists = index_lists, sector_lists = sector_lists, messages=optimized_net_result, tables=[pd.DataFrame(stock_data).to_html(classes='data', header="true")])
+    if(request.method == "POST"):
+        selectedList.append([request.form.get('sector'),request.form.get('index'), request.form.get('stock type')])
+        #stockValueExtractor.update_metric_data_frame(foverview)
+        #stockValueExtractor.update_metric_data_frame(ftechnical)
+        #stockValueExtractor.update_metric_data_frame(fownership)
+        #stockValueExtractor.update_metric_data_frame(fperformance)
+        #print(stockValueExtractor.get_metric_df) 
 
-@app.route('/stock',methods=["POST", "GET"])
+    return render_template('index.html', selectedList = selectedList, ticker_sector_lists = helper.index_select_attributes(), messages=optimized_net_result, tables=[pd.DataFrame(df_dict).to_html(classes='data', header="true")])
+
+@app.route('/stock',methods=['POST', 'GET'])
 def stock():
-    sector = request.form.get('sector')
-    index = request.form.get('index')
-    df = stockValueExtract.get_stocks_by_sector_and_index(sector,index)
-    ticker_lists.extend(df['Ticker'].values.tolist())
-    return redirect(url_for('create'))
+     if request.method == "POST":
+        sector = request.form.get('sector')
+        index = request.form.get('index')
+        stock_type = request.form.get('stock type')
+        print([sector,index,stock_type])
+        stockValueExtractor =  stockValueExtract.stock(sector,stock_type,index)
+        valuation = stockValueExtractor.update_metric_data_frame(fvaluation,1)
+        financial_df = stockValueExtractor.update_metric_data_frame(financial, 1)
+        technical = stockValueExtractor.update_metric_data_frame(ftechnical,1)
+        ownership = stockValueExtractor.update_metric_data_frame(fownership,1)
+        stockValueExtractor.update_avg_metric_df(gValuation)
+        stockValueExtractor.update_avg_metric_df(gOverview)
+        #df_dict.update(valuation.to_dict())
+        #df_dict.update(financial_df.to_dict())
+        df_dict.update(technical.to_dict())
+        df_dict.update(ownership.to_dict())
+        print(df_dict)
+        return redirect(url_for('index'))
+
 
 @app.route('/create/', methods=["POST", "GET"])
 def create():

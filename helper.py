@@ -1,3 +1,6 @@
+from enum import Enum
+
+
 def get_stock_dict():
     return [{"label": "stock", "title": "Stock1", "placeholder": "Enter Stock Ticker"},
             {"label": "stock", "title": "Stock2",
@@ -15,9 +18,11 @@ def get_stock_dict():
             {"label": "stock", "title": "Stock8",
                 "placeholder": "Enter Stock Ticker"}]
 
-def get_sector_and_index():
+def index_select_attributes():
     return [{"label": "index", "content": get_index(), "title":"Select Index"},
-        {"label": "sector", "content": get_sector(), "title": "Selected Sector"}]
+        {"label": "sector", "content": get_sector(), "title": "Selected Sector"},
+        {"label": "stock type", "content": get_stock_type(), "title": "Select Stock Type"}
+        ]
 
 def get_optimization_parameters():
     return [{"label": "index", "title": "Index", "placeholder": "Market Index"},
@@ -41,4 +46,36 @@ def get_exchange():
      return ['NASDAQ','NYSE','AMEX']
 
 def get_stock_type():
-    return ['Value','Growth']
+    return [StockType.VALUE.value,StockType.GROWTH.value]
+
+# convert to dictionary
+def get_valuation_metric():
+    return ['Ticker','P/E', 'Fwd P/E', 'PEG', 'P/B', 'P/C', 'Price']
+def get_financial_metric():
+    return ["Dividend","ROE","ROI"]
+def get_ownership_metric():
+    return ['Insider Own']
+def get_techical_metric():
+    return ['Beta']
+def get_techical_metric():
+    return ['Beta']
+def get_goverview_metric():
+    return ['Dividend']
+def get_gvaluation_metric():
+    return ['P/E', 'Fwd P/E', 'PEG', 'P/B', 'P/C']
+class StockType(Enum):
+    VALUE = 'Value'
+    GROWTH ='Growth'
+
+class PEFilter(Enum):
+     HIGH = 'Over 25'
+     LOW = 'Under 25'
+
+class FunctionEnum(Enum):
+     VALUATION = 'fvaluation'
+     OWNERSHIP = 'fownership'
+     TECHNICAL = 'ftechnical'
+     PERFORMANCE = 'fperformance'
+     FINANCIAL = 'financial'
+     G_OVERVIEW = 'gOverview'
+     G_VALUATION = 'gValuation'
