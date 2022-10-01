@@ -7,8 +7,7 @@ import numpy as np
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 # For data manipulation
-from finvizfinance.group.overview import Overview as Goverview
-from finvizfinance.group.valuation import Valuation as Gvaluation
+
 
 from finvizfinance.screener.financial import Financial
 from finvizfinance.screener.ticker import Ticker
@@ -26,8 +25,7 @@ ftechnical = Technical()
 fperformance = Performance()
 financial = Financial()
 ticker = Ticker()
-gOverview = Goverview()
-gValuation = Gvaluation()
+
 
 toastr = Toastr()
 
@@ -48,44 +46,35 @@ optimized_net_result = []
 ticker_lists = []
 selected_ticker_lists = []
 metric_dic = []
-stock_type = ''
-sector_index = []
-index_lists = []
-sector_lists = []
 df_dict = {}
 selectedList = []
 
-@app.route('/',methods=['POST', 'GET'])
+
+@app.route('/', methods=['POST', 'GET'])
 def index():
-    if(request.method == "POST"):
-        selectedList.append([request.form.get('sector'),request.form.get('index'), request.form.get('stock type')])
-        #stockValueExtractor.update_metric_data_frame(foverview)
-        #stockValueExtractor.update_metric_data_frame(ftechnical)
-        #stockValueExtractor.update_metric_data_frame(fownership)
-        #stockValueExtractor.update_metric_data_frame(fperformance)
-        #print(stockValueExtractor.get_metric_df) 
+    if (request.method == "POST"):
+        selectedList.append([request.form.get('sector'), request.form.get(
+            'index'), request.form.get('stock type')])
+    return render_template('index.html', selectedList=selectedList, ticker_sector_lists=helper.index_select_attributes(), messages=optimized_net_result, tables=[pd.DataFrame(df_dict).to_html(classes='data', header="true")])
 
-    return render_template('index.html', selectedList = selectedList, ticker_sector_lists = helper.index_select_attributes(), messages=optimized_net_result, tables=[pd.DataFrame(df_dict).to_html(classes='data', header="true")])
 
-@app.route('/stock',methods=['POST', 'GET'])
+@app.route('/stock', methods=['POST', 'GET'])
 def stock():
-     if request.method == "POST":
+    if request.method == "POST":
         sector = request.form.get('sector')
         index = request.form.get('index')
         stock_type = request.form.get('stock type')
-        print([sector,index,stock_type])
-        stockValueExtractor =  stockValueExtract.stock(sector,stock_type,index)
-        valuation = stockValueExtractor.update_metric_data_frame(fvaluation,1)
-        financial_df = stockValueExtractor.update_metric_data_frame(financial, 1)
-        technical = stockValueExtractor.update_metric_data_frame(ftechnical,1)
-        ownership = stockValueExtractor.update_metric_data_frame(fownership,1)
-        stockValueExtractor.update_avg_metric_df(gValuation)
-        stockValueExtractor.update_avg_metric_df(gOverview)
-        #df_dict.update(valuation.to_dict())
-        #df_dict.update(financial_df.to_dict())
-        df_dict.update(technical.to_dict())
-        df_dict.update(ownership.to_dict())
-        print(df_dict)
+        print([sector, index, stock_type])
+        stockValueExtractor = stockValueExtract.stock(sector, stock_type, index)
+        valuation = stockValueExtractor.get_metric_data(fvaluation, 1)[helper.get_valuation_metric()]
+        financial_df = stockValueExtractor.get_metric_data(financial, 1)[helper.get_financial_metric()]
+        technical = stockValueExtractor.get_metric_data(ftechnical, 1)[helper.get_techical_metric()]
+        ownership = stockValueExtractor.get_metric_data(fownership, 1)[helper.get_ownership_metric()]
+        combined_data = pd.concat([valuation,financial_df,technical,ownership],join = 'inner', axis = 1)
+        stockValueExtractor.update_metric_df(combined_data)
+        print("Combined Data", combined_data)
+        df_dict.update(combined_data.to_dict())
+        ticker_lists = stockValueExtractor.get_ticker_list()
         return redirect(url_for('index'))
 
 
@@ -93,7 +82,7 @@ def stock():
 def create():
     if request.method == 'POST':
         app.logger.info("Extracting form data")
-        stock_type = request.form["stock_type"] 
+        stock_type = request.form["stock_type"]
         threshold = request.form["threshold"]
         investing_amount = request.form["investing_amount"]
         expected_return_value = request.form["expected_return_value"]
@@ -123,7 +112,7 @@ def create():
                 stockValueExtract.get_optimized_result(portfolio))
             return redirect(url_for('index'))
 
-    return render_template('create.html', ticker_lists = ticker_lists, stocks=helper.get_stock_dict(), parameters=helper.get_optimization_parameters())
+    return render_template('create.html', ticker_lists=ticker_lists, stocks=helper.get_stock_dict(), parameters=helper.get_optimization_parameters())
 
 
 @app.route('/portfolio', methods=["GET"])

@@ -1,70 +1,54 @@
 
 import pandas as pd
-from urllib.request import urlopen, Request
-from bs4 import BeautifulSoup
 import numpy as np
-from helper import StockType,PEFilter
+import helper
+from finvizfinance.group.overview import Overview as Goverview
+from finvizfinance.group.valuation import Valuation as Gvaluation
 pd.options.mode.chained_assignment = None  # default='warn'
 
 class stock():
      # init method or constructor
     def __init__(self, sector, stock_type, index):
         self.sector = sector
+        self.selected_df = pd.DataFrame()
         self.metric_df = pd.DataFrame()
         self.avg_metric_df = pd.DataFrame()
         self.avg_metric_dictionary = {}
         self.stock_type = stock_type
         self.index = index
+    
+    def update_metric_df(self,df):
+        self.metric_df = df
+        return self.metric_df
 
-    def update_metric_data_frame(self,function,page):
+    def get_ticker_list(self):
+        return self.metric_df["Ticker"].to_numpy()
+    
+    def get_metric_df(self):
+        return self.metric_df
+
+    def get_metric_data(self,function,page):
         try:
             filter_dic = {"Sector": self.sector, "Index":self.index}
-            if self.stock_type == StockType.GROWTH.value:
-                filter_dic.update({"P/E":PEFilter.HIGH.value})
-            elif self.stock_type == StockType.VALUE.value:
-                filter_dic.update({"P/E":PEFilter.LOW.value})
+            if self.stock_type == helper.StockType.GROWTH.value:
+                filter_dic.update({"P/E":helper.PEFilter.HIGH.value})
+            elif self.stock_type == helper.StockType.VALUE.value:
+                filter_dic.update({"P/E":helper.PEFilter.LOW.value})
             function.set_filter(filters_dict=filter_dic)
-            df2 = function.screener_view(select_page=page)
-            print("DF", df2)
-            #df2 = self.get_subset_metric(functionName,df2)  need to revisit
-            if self.metric_df.size == 0:
-                self.metric_df = df2
-            else:
-                pd.concat([self.metric_df,df2])
+            self.metric_df = function.screener_view(select_page=page)
+            #
         except Exception as e:
              print("An exception occurred", e)
              pass
         return self.metric_df
 
-    
-    """ def get_subset_metric(self,function,df2):
-        if function == FunctionEnum.VALUATION.value:
-                df2 = df2 [helper.get_valuation_metric()]
-        elif function == FunctionEnum.FINANCIAL.value:
-            df2 = df2["Dividend","ROE","ROI"]
-        elif function == FunctionEnum.TECHNICAL.value:
-            df2 = df2[helper.get_techical_metric()]   
-        elif function == FunctionEnum.OWNERSHIP.value:
-            df2 = df2[helper.get_ownership_metric()]
-        elif function == FunctionEnum.G_OVERVIEW.value:
-            df2 = df2[helper.get_goverview_metric()]
-        elif function == FunctionEnum.G_VALUATION.value:
-            df2 = df2[helper.get_gvaluation_metric()]  
-        return df2 """
-    
-    def update_avg_metric_df(self,function):
-        df2 = function.screener_view(group='Sector', order='Name')
-        if self.avg_metric_df.size == 0:
-         self.avg_metric_df = df2
-        else:
-         pd.concat([self.avg_metric_df, df2]) 
+    def update_avg_metric_df(self):
+        gOverview = Goverview()
+        gValuation = Gvaluation()
+        overview = gOverview.screener_view(group='Sector', order='Name')[helper.get_goverview_metric()]
+        valuation = gValuation.screener_view(group='Sector', order='Name')[helper.get_gvaluation_metric()]
+        self.avg_metric_df =  pd.concat([overview, valuation], axis =1 , join = 'inner') 
         return self.avg_metric_df 
-        
-    def get_avg_metric_df(self):
-        return self.avg_metric_df
-    
-    def get_metric_df(self):
-        return pd.DataFrame(self.df_dict)
     
     def update_avg_metric_dic(self):
         avg_metric_df_by_sector = self.avg_metric_df["Name" : self.sector ]
