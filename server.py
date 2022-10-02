@@ -31,23 +31,17 @@ toastr = Toastr()
 
 app = Flask(__name__)
 app.secret_key = "e0af172472bfdc4bc8292763f86e3abe0e2eb9a8cf68d12f"
-limiter = Limiter(
-    app,
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",
-)
 toastr.init_app(app)
 
-colours = ['Red', 'Blue', 'Black', 'Orange']
-optimized_result = {"Stock": ['', ''], "Optimized Expected Return": [
-    '', ''], "Optimized Weight": ['', ''], 'Total Cost': ['', ''], 'Number of Shares': ['', '']}
-optimized_net_result = []
+#optimized_result = {"Stock": ['', ''], "Optimized Expected Return": [
+   # '', ''], "Optimized Weight": ['', ''], 'Total Cost': ['', ''], 'Number of Shares': ['', '']}
+optimized_net_result = {}
 ticker_lists = []
 selected_ticker_lists = []
-metric_dic = []
+metric_dic = {}
 df_dict = {}
 selectedList = []
+
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -55,7 +49,7 @@ def index():
     if (request.method == "POST"):
         selectedList.append([request.form.get('sector'), request.form.get(
             'index'), request.form.get('stock type')])
-    return render_template('index.html', selectedList=selectedList, ticker_sector_lists=helper.index_select_attributes(), messages=optimized_net_result, tables=[pd.DataFrame(df_dict).to_html(classes='data', header="true")])
+    return render_template('index.html', selectedList=selectedList, ticker_sector_lists=helper.index_select_attributes(),tables=[pd.DataFrame(df_dict).to_html(classes='data', header="true")])
 
 
 @app.route('/stock', methods=['POST', 'GET'])
@@ -64,17 +58,25 @@ def stock():
         sector = request.form.get('sector')
         index = request.form.get('index')
         stock_type = request.form.get('stock type')
+        metric_dic.update({"sector":sector,"index":index,"stock_type": stock_type})
         print([sector, index, stock_type])
-        stockValueExtractor = stockValueExtract.stock(sector, stock_type, index)
-        valuation = stockValueExtractor.get_metric_data(fvaluation, 1)[helper.get_valuation_metric()]
-        financial_df = stockValueExtractor.get_metric_data(financial, 1)[helper.get_financial_metric()]
-        technical = stockValueExtractor.get_metric_data(ftechnical, 1)[helper.get_techical_metric()]
-        ownership = stockValueExtractor.get_metric_data(fownership, 1)[helper.get_ownership_metric()]
-        combined_data = pd.concat([valuation,financial_df,technical,ownership],join = 'inner', axis = 1)
+        stockValueExtractor = stockValueExtract.stock(
+            sector, stock_type, index)
+        valuation = stockValueExtractor.get_metric_data(
+            fvaluation, 1)[helper.get_valuation_metric()]
+        financial_df = stockValueExtractor.get_metric_data(
+            financial, 1)[helper.get_financial_metric()]
+        technical = stockValueExtractor.get_metric_data(
+            ftechnical, 1)[helper.get_techical_metric()]
+        ownership = stockValueExtractor.get_metric_data(
+            fownership, 1)[helper.get_ownership_metric()]
+        combined_data = pd.concat(
+            [valuation, financial_df, technical, ownership], join='inner', axis=1)
+        combined_data.to_pickle("./stock.pkl")
         stockValueExtractor.update_metric_df(combined_data)
         print("Combined Data", combined_data)
         df_dict.update(combined_data.to_dict())
-        ticker_lists = stockValueExtractor.get_ticker_list()
+        ticker_lists.extend(stockValueExtractor.get_ticker_list())
         return redirect(url_for('index'))
 
 
@@ -82,12 +84,11 @@ def stock():
 def create():
     if request.method == 'POST':
         app.logger.info("Extracting form data")
-        stock_type = request.form["stock_type"]
         threshold = request.form["threshold"]
         investing_amount = request.form["investing_amount"]
         expected_return_value = request.form["expected_return_value"]
         selected_ticker_lists = request.form.getlist("stock[]")
-        stockValueExtract.remove_empty_element(selected_ticker_lists)
+        print("list", selected_ticker_lists)
         if len(selected_ticker_lists) == 0:
             flash('The stock list should not be null')
         elif len(selected_ticker_lists) != len(set(selected_ticker_lists)):
@@ -102,23 +103,24 @@ def create():
             flash('Expected Return Value must not be blank')
         else:
             app.logger.info("Optimizing the stock data")
-            portfolio = stockValueExtract.build_portfolio(stock_list=selected_ticker_lists, metric_dic=metric_dic, stock_type=stock_type, desired_expected_return=int(
-                expected_return_value), threshold=int(threshold), investing_amount=int(investing_amount), optimal_number_of_stocks=int(threshold))
-            optimized_net_result.append(
-                {"title": "Total Invested Amount", "content": investing_amount})
-            optimized_net_result.append({"title": "Total Expected Return", "content": sum(
-                stockValueExtract.get_array('Expected Return', portfolio))})
-            optimized_result.update(
-                stockValueExtract.get_optimized_result(portfolio))
+            print("DF DIC", df_dict)
+            print("STOCK TYPE",metric_dic["stock_type"])
+            portfolio = stockValueExtract.stock(metric_dic["sector"], metric_dic["stock_type"], metric_dic["index"]).build_portfolio(df=pd.read_pickle("./stock.pkl"), selected_ticker_list=selected_ticker_lists, desired_return=int(
+                expected_return_value), threshold=int(threshold), investing_amount=int(investing_amount))
+            optimized_net_result.update(portfolio.to_dict())
+            #optimized_net_result.append(
+               # {"title": "Total Invested Amount", "content": investing_amount})
+            #optimized_net_result.append({"title": "Total Expected Return", "content": sum(portfolio['Expected Return'].replace(np.nan, 0).to_numpy())})
+            #optimized_result.update(
+               # stockValueExtract.get_optimized_result(portfolio))
             return redirect(url_for('index'))
 
-    return render_template('create.html', ticker_lists=ticker_lists, stocks=helper.get_stock_dict(), parameters=helper.get_optimization_parameters())
+    return render_template('create.html', ticker_lists=ticker_lists, stocks=helper.get_stock_dict(ticker_lists, len(set(ticker_lists))), parameters=helper.get_optimization_parameters())
 
 
 @app.route('/portfolio', methods=["GET"])
 def portfolio():
-    df = stockValueExtract.get_data_from_sheet(service_file_path=meta_dictionary.get(
-        'auth_json_path'), spreadsheet_id=meta_dictionary.get('spreadsheet_key'), sheet_name=meta_dictionary.get('wks_name'))
+    df = pd.DataFrame(optimized_net_result)
     return df.to_html(header="true", table_id="table")
 
 

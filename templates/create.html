@@ -2,48 +2,30 @@
 
 {% block content %}
     <h1>{% block title %}Stock Optmization Parameters{% endblock %}</h1>
-    <form method="post">
-      <select name= ticker method="GET" action="/">
-        {% for ticker in ticker_lists %}
-        <option value= "{{ticker}}" SELECTED>{{ ticker }}</option>
+    <form class="form-inline" method="post">
+      {% for stock in stocks %}
+      <label for ="{{stock['label']}}"> {{stock['title']}} </label>
+      <div class="cnt" id = "{{stock['label']}}" style="display: table-row">
+          <select id = "stock[]" name="stock[]">
+              {% for e in stock['ticker_list']  %}
+                  <option value="{{ e }}" selected>{{ e }}</option>
+              {% endfor %}
+          </select>
+      </div>
+      {% endfor %}
+
+      {% for parameter in parameters %}
+          <label for = "{{ parameter['label'] }}">{{ parameter['title'] }}</label>
+           <br>
+           <div>
+          <input type="text" name="{{ parameter['label'] }}"
+           placeholder= "{{ parameter['placeholder'] }}"
+           class='cnt'
+           value="{{ request.form[parameter['label']] }}"></input>
+          </div>
         {% endfor %}
-       </select>
-       {% for stock in stocks %}
-              <label for = "{{ stock['label'] }}">{{ stock['title'] }}</label>
-               <br>
-              <input type="text" name="stock[]"
-               placeholder= "{{ stock['placeholder'] }}"
-               class='cnt'
-               value="{{ request.form['stock[]'] }}"></input>
-               <br>
-       {% endfor %}
-       {% for parameter in parameters %}
         <br>
-        <label for = "{{ parameter['label'] }}">{{ parameter['title'] }}</label>
-         <br>
-        <input type="text" name="{{ parameter['label'] }}"
-         placeholder= "{{ parameter['placeholder'] }}"
-         class='cnt'
-         value="{{ request.form[parameter['label']] }}"></input>
-       {% endfor %}
-        <br>
-        <br>
-        <button type="submit">Submit</button>
+      <button type="submit" class="btn btn-default"> Optimize </button>
     </form>
-    <script type="text/javascript" src="engine1/jquery.js"></script> 
-    <script> 
-        $("#submit").click(function(){
-        var arr=[];
-        $(".cnt").each(function(){
-        arr.push($(this).val());
-            });
-        $.ajax({
-         url:'{{url_for("create")}}',
-        type:'post',
-        data:{contacts:arr},
-        success:function(res){}
-  });
-});
-  </script>
 {% endblock %}
 
