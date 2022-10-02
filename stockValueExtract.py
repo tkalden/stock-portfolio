@@ -48,8 +48,8 @@ class stock():
         overview = gOverview.screener_view(group='Sector', order='Name')[helper.get_goverview_metric()]
         valuation = gValuation.screener_view(group='Sector', order='Name')[helper.get_gvaluation_metric()]
         self.avg_metric_df =  pd.concat([overview, valuation], axis =1 , join = 'inner') 
-        print("AVGE DF", self.avg_metric_df)
         self.avg_metric_df = self.avg_metric_df.loc[self.avg_metric_df['Name'] == self.sector]
+        print("AVGE DF", self.avg_metric_df)
         return self.avg_metric_df 
     
     """  def update_avg_metric_dic(self):
@@ -67,13 +67,23 @@ class stock():
 
     
     def calculate_strength_value(self):
-        pe =  self.avg_metric_df['P/E'] - self.metric_df['P/E']
-        fpe =  self.avg_metric_df['Fwd P/E'] - self.metric_df['Fwd P/E']
-        pc = self.avg_metric_df['P/C'] - self.metric_df['P/C']
-        pb = self.avg_metric_df['P/B'] - self.metric_df['P/B']
-        peg = self.avg_metric_df['PEG'] - self.metric_df['PEG']
-        div =  self.metric_df['Dividend'] - self.avg_metric_df['Dividend']
+        # multiply each column by -1 to take care of subtraction
+        pe = -1 * self.optimized_df['P/E'].replace(np.nan, 0) 
+        fpe = -1 * self.optimized_df['Fwd P/E'].replace(np.nan, 0)
+        pc =  -1 * self.optimized_df['P/C'].replace(np.nan, 0)
+        pb = -1* self.optimized_df['P/B'].replace(np.nan, 0)
+        peg = -1* self.optimized_df['PEG'].replace(np.nan, 0)
+        div = self.optimized_df['Dividend'].replace(np.nan, 0) 
+
+        # add up all the avg metric values
+        total_avg_metric = self.avg_metric_df['P/E'] + self.avg_metric_df['Fwd P/E'] + self.avg_metric_df['P/C'] 
+        + self.avg_metric_df['P/B'] + self.avg_metric_df['PEG'] - self.avg_metric_df['Dividend']
+         
+        # add up all the metric columns
         combination = pe + fpe + pc + pb + peg + div
+
+        #add the total avg metric values to the combination columns
+        combination += total_avg_metric.values
         if self.stock_type == 'Value':
             self.optimized_df["Strength"] = combination 
         elif self.stock_type == 'Growth':
@@ -116,7 +126,7 @@ class stock():
             desired_return = actual_expected_return
 
         if  number_of_stocks > threshold:
-            return self.optimize_expected_return(self, threshold, desired_return, number_of_stocks - 1)
+            return self.optimize_expected_return(threshold, desired_return, number_of_stocks - 1)
         else:
             self.optimized_df = self.optimized_df.head(optimal_number_of_stocks)
             return self.calculate_weight_expected_return()
@@ -131,7 +141,6 @@ class stock():
 
     def build_portfolio(self,df,selected_ticker_list,threshold,desired_return,investing_amount):
         self.metric_df = df
-        print("DFFF",df)
         self.update_avg_metric_df()
         self.optimized_df = df[df.Ticker.isin(selected_ticker_list)]
         optimized_df = self.calculate_strength_value()

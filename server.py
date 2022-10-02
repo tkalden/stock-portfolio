@@ -107,6 +107,7 @@ def create():
             print("STOCK TYPE",metric_dic["stock_type"])
             portfolio = stockValueExtract.stock(metric_dic["sector"], metric_dic["stock_type"], metric_dic["index"]).build_portfolio(df=pd.read_pickle("./stock.pkl"), selected_ticker_list=selected_ticker_lists, desired_return=int(
                 expected_return_value), threshold=int(threshold), investing_amount=int(investing_amount))
+            print("PORT", portfolio)
             optimized_net_result.update(portfolio.to_dict())
             #optimized_net_result.append(
                # {"title": "Total Invested Amount", "content": investing_amount})
@@ -125,4 +126,5 @@ def portfolio():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host='0.0.0.0')
+
