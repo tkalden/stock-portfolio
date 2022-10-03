@@ -76,6 +76,7 @@ def stock():
         stockValueExtractor.update_metric_df(combined_data)
         print("Combined Data", combined_data)
         df_dict.update(combined_data.to_dict())
+        ticker_lists.clear()
         ticker_lists.extend(stockValueExtractor.get_ticker_list())
         return redirect(url_for('index'))
 
@@ -105,8 +106,8 @@ def create():
             app.logger.info("Optimizing the stock data")
             print("DF DIC", df_dict)
             print("STOCK TYPE",metric_dic["stock_type"])
-            portfolio = stockValueExtract.stock(metric_dic["sector"], metric_dic["stock_type"], metric_dic["index"]).build_portfolio(df=pd.read_pickle("./stock.pkl"), selected_ticker_list=selected_ticker_lists, desired_return=int(
-                expected_return_value), threshold=int(threshold), investing_amount=int(investing_amount))
+            portfolio = stockValueExtract.stock(metric_dic["sector"], metric_dic["stock_type"], metric_dic["index"]).build_portfolio(df=pd.read_pickle("./stock.pkl"), selected_ticker_list=selected_ticker_lists, desired_return= np.divide(int(
+                expected_return_value),100), threshold=int(threshold), investing_amount=int(investing_amount))
             print("PORT", portfolio)
             optimized_net_result.update(portfolio.to_dict())
             #optimized_net_result.append(
@@ -114,7 +115,7 @@ def create():
             #optimized_net_result.append({"title": "Total Expected Return", "content": sum(portfolio['Expected Return'].replace(np.nan, 0).to_numpy())})
             #optimized_result.update(
                # stockValueExtract.get_optimized_result(portfolio))
-            return redirect(url_for('index'))
+            return redirect(url_for('portfolio'))
 
     return render_template('create.html', ticker_lists=ticker_lists, stocks=helper.get_stock_dict(ticker_lists, len(set(ticker_lists))), parameters=helper.get_optimization_parameters())
 

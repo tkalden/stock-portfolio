@@ -16,6 +16,10 @@ class stock():
         self.avg_metric_dictionary = {}
         self.stock_type = stock_type
         self.index = index
+        self.optimal_number_stocks = 0
+        self.previous_highest_expected_return = 0
+        self.threshold = 0
+        self.desired_return = 0
     
     def update_metric_df(self,df):
         self.metric_df = df
@@ -52,54 +56,50 @@ class stock():
         print("AVGE DF", self.avg_metric_df)
         return self.avg_metric_df 
     
-    """  def update_avg_metric_dic(self):
-        avg_metric_df_by_sector = self.avg_metric_df["Name" : self.sector ]
-        avg_pe = avg_metric_df_by_sector["P/E"].values()
-        avg_pc = avg_metric_df_by_sector["P/C"].values()
-        avg_fpe = avg_metric_df_by_sector["Fwd P/E"].values()
-        avg_peg = avg_metric_df_by_sector["PEG"].values()
-        avg_pb = avg_metric_df_by_sector["P/B"].values()
-        avg_div = avg_metric_df_by_sector["Dividend"].astype(str).str.replace('%', '').values()
-        self.avg_metric_dictionary = {"pe": avg_pe, "pc": avg_pc, "fpe": avg_fpe, "peg": avg_peg, "pb": avg_pb,
-            "div": avg_div
-            }
-        return self.avg_metric_dictionary """
+    def update_avg_metric_dic(self):
+        self.avg_metric_dictionary.update({
+            "pe": self.avg_metric_df['P/E'].iat[0],
+            "fpe": self.avg_metric_df['Fwd P/E'].iat[0],
+            "pc": self.avg_metric_df['P/C'].iat[0],
+            "pb": self.avg_metric_df['P/B'].iat[0],
+            "peg" : self.avg_metric_df['PEG'].iat[0],
+            "div": self.avg_metric_df['Dividend'].iat[0]})
+        return self.avg_metric_dictionary 
 
-    
+    # need to refactor 
     def calculate_strength_value(self):
-        # multiply each column by -1 to take care of subtraction
-        pe = -1 * self.optimized_df['P/E'].replace(np.nan, 0) 
-        fpe = -1 * self.optimized_df['Fwd P/E'].replace(np.nan, 0)
-        pc =  -1 * self.optimized_df['P/C'].replace(np.nan, 0)
-        pb = -1* self.optimized_df['P/B'].replace(np.nan, 0)
-        peg = -1* self.optimized_df['PEG'].replace(np.nan, 0)
-        div = self.optimized_df['Dividend'].replace(np.nan, 0) 
-
-        # add up all the avg metric values
-        total_avg_metric = self.avg_metric_df['P/E'] + self.avg_metric_df['Fwd P/E'] + self.avg_metric_df['P/C'] 
-        + self.avg_metric_df['P/B'] + self.avg_metric_df['PEG'] - self.avg_metric_df['Dividend']
-         
-        # add up all the metric columns
-        combination = pe + fpe + pc + pb + peg + div
-
-        #add the total avg metric values to the combination columns
-        combination += total_avg_metric.values
         if self.stock_type == 'Value':
-            self.optimized_df["Strength"] = combination 
+            pe = np.where(self.optimized_df["P/E"].replace(np.nan, 0) < self.avg_metric_dictionary["pe"], 1, 0)
+            fpe = np.where(self.optimized_df["Fwd P/E"].replace(np.nan, 0) < self.avg_metric_dictionary["fpe"], 1, 0)
+            pb = np.where(self.optimized_df["P/B"].replace(np.nan, 0) < self.avg_metric_dictionary["pb"], 1, 0)
+            peg = np.where(self.optimized_df["PEG"].replace(np.nan, 0) < self.avg_metric_dictionary["peg"], 1, 0)
+            div = np.where(self.optimized_df["Dividend"].replace(np.nan, 0) < self.avg_metric_dictionary["div"], 0, 1)
+            beta = np.where(self.optimized_df["Beta"].replace(np.nan, 0) < 1, 0, 1)
+            self.optimized_df["Strength"] = pe + fpe + pb + peg + div + beta
+
         elif self.stock_type == 'Growth':
-            self.optimized_df["Strength"] = -1 * combination  # -1 because Growth has opposite metric values
+            pe = np.where(self.optimized_df["P/E"].replace(np.nan, 0) < self.avg_metric_dictionary["pe"], 0, 1)
+            fpe = np.where(self.optimized_df["Fwd P/E"].replace(np.nan, 0) < self.avg_metric_dictionary["fpe"], 0, 1)
+            pb = np.where(self.optimized_df["P/B"].replace(np.nan, 0) < self.avg_metric_dictionary["pb"], 0, 1)
+            peg = np.where(self.optimized_df["PEG"].replace(np.nan, 0) < self.avg_metric_dictionary["peg"], 0, 1)
+            div = np.where(self.optimized_df["Dividend"].replace(np.nan, 0) < self.avg_metric_dictionary["div"], 1, 0)
+            beta = np.where(self.optimized_df["Beta"].replace(np.nan, 0) < 1, 1, 0)
+            self.optimized_df["Strength"] = pe + fpe + pb + peg + div + beta
         else :
             raise ValueError("Stock Type must be Value or Growth")
+        self.optimized_df = self.optimized_df.sort_values(by= "Strength", ascending=False)
+        print ("OP" , self.optimized_df)
+
         return self.optimized_df
 
 
-    def calculate_weight_expected_return(self):
-        strengthArray  = self.optimized_df["Strength"].replace(np.nan, 0).to_numpy()
+    def calculate_weight_expected_return(self,df):
+        strengthArray  = df["Strength"]
         strengthList = list(map(float, strengthArray))
         weight_array = np.divide(strengthList, sum(strengthList))
-        self.optimized_df["Weight"] = weight_array
-        self.optimized_df["Expected Return"] = self.optimized_df["ROI"].replace(np.nan, 0) * self.optimized_df["Weight"]
-        return self.optimized_df['Weight']
+        df["Weight"] = weight_array
+        df["Expected Return"] = df["ROI"].replace(np.nan, 0) * df["Weight"]
+        return df
     
     def calculate_portfolio_value_distribution(self,investing_amount):
         self.optimized_df['Invested Amount'] = np.multiply(self.optimized_df['Weight'], investing_amount)
@@ -112,46 +112,55 @@ class stock():
 
 
 
-    def optimize_expected_return(self,threshold,desired_return,number_of_stocks):
-        self.calculate_weight_expected_return()
-        optimal_number_of_stocks =  threshold
-        desired_return = desired_return
-        self.optimized_df = self.optimized_df.head(number_of_stocks)
-        actual_return = self.optimized_df['Expected Return'].replace(np.nan, 0).to_numpy()
+    def optimize_expected_return(self,number_of_stocks):
+        df = self.optimized_df.head(number_of_stocks)
+        self.calculate_weight_expected_return(df)
+        actual_return = df['Expected Return'].replace(np.nan, 0).to_numpy()
         actual_expected_return = sum(actual_return)
+        print(actual_expected_return)
+        print(self.desired_return)
+        print(self.optimal_number_stocks)
 
+        if  actual_expected_return > self.desired_return:
+            self.previous_highest_expected_return = actual_expected_return
+            self.optimal_number_stocks = number_of_stocks
+            self.desired_return = actual_expected_return
+        
+        elif  actual_expected_return > self.previous_highest_expected_return :
+              self.previous_highest_expected_return = actual_expected_return
+              self.optimal_number_stocks = number_of_stocks
 
-        if (actual_expected_return > desired_return):
-            optimal_number_of_stocks = number_of_stocks
-            desired_return = actual_expected_return
-
-        if  number_of_stocks > threshold:
-            return self.optimize_expected_return(threshold, desired_return, number_of_stocks - 1)
+        if  number_of_stocks > self.threshold: 
+            return self.optimize_expected_return(number_of_stocks - 1)
         else:
-            self.optimized_df = self.optimized_df.head(optimal_number_of_stocks)
-            return self.calculate_weight_expected_return()
+            self.optimized_df = self.optimized_df.head(self.optimal_number_stocks)
+            self.optimized_df = self.calculate_weight_expected_return(self.optimized_df)
+            return 
 
 
     def top_stocks(self):
         stocks_df = self.update_metric_data_frame
         self.update_avg_metric_df
         stocks_df = self.calculate_strength_value
-        stocks_df = stocks_df.sort_values(by=['Strength Value'], ascending=False)
+        stocks_df = stocks_df.sort_values(by=['Strength'], ascending=False)
         return stocks_df
 
     def build_portfolio(self,df,selected_ticker_list,threshold,desired_return,investing_amount):
         self.metric_df = df
         self.update_avg_metric_df()
         self.optimized_df = df[df.Ticker.isin(selected_ticker_list)]
-        optimized_df = self.calculate_strength_value()
-        optimized_df = self.optimized_df.sort_values(by=['Strength'], ascending=False)
-        optimized_df = self.optimize_expected_return(threshold,desired_return,number_of_stocks=len(selected_ticker_list)) 
-        optimized_df = self.calculate_portfolio_value_distribution(investing_amount)
-        optimized_df = self.total_share()
-        return optimized_df
+        self.update_avg_metric_dic()
+        self.calculate_strength_value()
+        self.threshold = threshold
+        self.desired_return = desired_return
+        self.optimize_expected_return(number_of_stocks=len(selected_ticker_list)) 
+        self.calculate_portfolio_value_distribution(investing_amount)
+        self.total_share()
+        return self.optimized_df
 
     def remove_empty_element(stock_list):
             while '' in stock_list:
                 stock_list.remove('')
+
 
 
