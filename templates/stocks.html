@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{% block title %} Top Stocks {% endblock %}</h1>
+<table id="stocks">
+    {% for table in tables %}
+    {{ table|safe }}
+    {% endfor %}
+</table>
+<br>
+<a href="/create/"> <button> Build Portfolio </button> </a>
+{% endblock %}

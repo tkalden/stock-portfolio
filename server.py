@@ -1,3 +1,4 @@
+from pydoc import render_doc
 import stockValueExtract
 import helper
 from flask import Flask, render_template, request, url_for, flash, redirect
@@ -49,12 +50,12 @@ def index():
     if (request.method == "POST"):
         selectedList.append([request.form.get('sector'), request.form.get(
             'index'), request.form.get('stock type')])
-    return render_template('index.html', selectedList=selectedList, ticker_sector_lists=helper.index_select_attributes(),tables=[pd.DataFrame(df_dict).to_html(classes='data', header="true")])
+    return render_template('index.html', selectedList=selectedList, ticker_sector_lists=helper.index_select_attributes())
 
 
 @app.route('/stock', methods=['POST', 'GET'])
 def stock():
-    if request.method == "POST":
+    if request.method == "POST" :
         sector = request.form.get('sector')
         index = request.form.get('index')
         stock_type = request.form.get('stock type')
@@ -72,13 +73,12 @@ def stock():
             fownership, 1)[helper.get_ownership_metric()]
         combined_data = pd.concat(
             [valuation, financial_df, technical, ownership], join='inner', axis=1)
-        combined_data.to_pickle("./stock.pkl")
-        stockValueExtractor.update_metric_df(combined_data)
-        print("Combined Data", combined_data)
-        df_dict.update(combined_data.to_dict())
+        strength_calculated_df = stockValueExtractor.calculate_strength_value(combined_data)
+        strength_calculated_df.to_pickle("./stock.pkl")
+       # df_dict.update(strength_calculated_df.to_dict())
         ticker_lists.clear()
-        ticker_lists.extend(stockValueExtractor.get_ticker_list())
-        return redirect(url_for('index'))
+        ticker_lists.extend(strength_calculated_df["Ticker"].to_list())
+        return render_template('stocks.html',tables=[strength_calculated_df.to_html(classes='data', header="true")])
 
 
 @app.route('/create/', methods=["POST", "GET"])
