@@ -5,6 +5,23 @@ import helper
 from finvizfinance.group.overview import Overview as Goverview
 from finvizfinance.group.valuation import Valuation as Gvaluation
 pd.options.mode.chained_assignment = None  # default='warn'
+from finvizfinance.screener.financial import Financial
+from finvizfinance.screener.ticker import Ticker
+from finvizfinance.screener.technical import Technical
+from finvizfinance.screener.ownership import Ownership
+from finvizfinance.screener.valuation import Valuation
+from finvizfinance.screener.performance import Performance
+from finvizfinance.screener.overview import Overview
+from finvizfinance.screener.technical import Technical
+
+foverview = Overview()
+fvaluation = Valuation()
+fownership = Ownership()
+ftechnical = Technical()
+fperformance = Performance()
+financial = Financial()
+ticker = Ticker()
+
 
 
 class stock():
@@ -21,27 +38,24 @@ class stock():
         self.previous_highest_expected_return = 0
         self.threshold = 0
         self.desired_return = 0
-
-    def update_metric_df(self, df):
-        self.metric_df = df
-        return self.metric_df
-
-    def get_ticker_list(self):
-        return self.metric_df["Ticker"].to_list()
-
-    def get_metric_df(self):
-        return self.metric_df
+    
+    def get_stock_data(self,page):
+        valuation = self.get_metric_data(fvaluation, page)[helper.get_valuation_metric()]
+        financial_df = self.get_metric_data(financial, page)[helper.get_financial_metric()]
+        technical = self.get_metric_data(ftechnical, page)[helper.get_techical_metric()]
+        ownership = self.get_metric_data(fownership, page)[helper.get_ownership_metric()]
+        combined_data = pd.concat([valuation, financial_df, technical, ownership], join='inner', axis=1)
+        return combined_data
 
     def get_metric_data(self, function, page):
         try:
             filter_dic = {"Sector": self.sector, "Index": self.index}
-            if self.stock_type == helper.StockType.GROWTH.value:
-                filter_dic.update({"P/E": helper.PEFilter.HIGH.value})
-            elif self.stock_type == helper.StockType.VALUE.value:
-                filter_dic.update({"P/E": helper.PEFilter.LOW.value})
+            #if self.stock_type == helper.StockType.GROWTH.value:
+               # filter_dic.update({"P/E": helper.PEFilter.HIGH.value})
+           # elif self.stock_type == helper.StockType.VALUE.value:
+               # filter_dic.update({"P/E": helper.PEFilter.LOW.value})
             function.set_filter(filters_dict=filter_dic)
             self.metric_df = function.screener_view(select_page=page)
-            #
         except Exception as e:
             print("An exception occurred", e)
             pass
@@ -74,7 +88,7 @@ class stock():
     # need to refactor
     def calculate_strength_value(self, df):
         self.update_avg_metric_dic()
-        if self.stock_type == 'Value':
+        if self.stock_type == helper.StockType.VALUE.value:
             pe = np.where(df["P/E"].replace(np.nan, 0) <
                           self.avg_metric_dictionary["pe"], 1, 0)
             fpe = np.where(df["Fwd P/E"].replace(np.nan, 0) <
@@ -88,7 +102,7 @@ class stock():
             beta = np.where(df["Beta"].replace(np.nan, 0) < 1, 0, 1)
             df["Strength"] = pe + fpe + pb + peg + div + beta
 
-        elif self.stock_type == 'Growth':
+        elif self.stock_type == helper.StockType.GROWTH.value:
             pe = np.where(df["P/E"].replace(np.nan, 0) <
                           self.avg_metric_dictionary["pe"], 0, 1)
             fpe = np.where(df["Fwd P/E"].replace(np.nan, 0) <
@@ -159,7 +173,6 @@ class stock():
     def build_portfolio(self, df, selected_ticker_list, threshold, desired_return, investing_amount):
         self.metric_df = df
         self.optimized_df = df[df.Ticker.isin(selected_ticker_list)]
-        #self.optimized_df = self.calculate_strength_value(self.optimized_df)
         self.threshold = threshold
         self.desired_return = desired_return
         self.optimize_expected_return(

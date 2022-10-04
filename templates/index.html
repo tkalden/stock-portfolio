@@ -8,11 +8,7 @@
             <div class="select" id = "{{ts['label']}}">
                 <select name="{{ts['label']}}">
                     {% for e in ts['content']  %}
-                        {% if e in selectedList %}
                         <option value="{{ e }}" selected>{{ e }}</option>
-                        {% else %}
-                        <option value="{{ e }}">{{ e }}</option>
-                        {% endif %}
                     {% endfor %}
                 </select>
             </div>

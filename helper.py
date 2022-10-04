@@ -25,8 +25,8 @@ def get_stock_dict(ticker_list,size):
 
 def index_select_attributes():
     return [{"label": "index", "content": get_index(), "title": "Select Index"},
-            {"label": "sector", "content": get_sector(), "title": "Selected Sector"},
-            {"label": "stock type", "content": get_stock_type(),
+            {"label": "sector", "content": get_sector(), "title": "Select Sector"},
+            {"label": "stock_type", "content": get_stock_type(),
              "title": "Select Stock Type"}
             ]
 
@@ -87,6 +87,8 @@ def get_goverview_metric():
 def get_gvaluation_metric():
     return ['Name','P/E', 'Fwd P/E', 'PEG', 'P/B', 'P/C']
 
+def portfolio_attributes():
+    return ['Ticker','Price', 'Expected Return', 'Weight', 'Total Shares', 'Invested Amount']
 
 class StockType(Enum):
     VALUE = 'Value'

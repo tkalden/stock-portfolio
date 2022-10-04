@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{% block title %} Portfolio Result {% endblock %}</h1>
+<table id="stocks">
+    {% for table in tables %}
+    {{ table|safe }}
+    {% endfor %}
+</table>
+<br>
+{% endblock %}
