@@ -2,7 +2,7 @@
 
 {% block content %}
     <h1>{% block title %}Stock Optmization Parameters{% endblock %}</h1>
-    <form class="form-inline" method="post" action="{{ url_for('portfolio') }}">
+    <form class="form-inline" method="post">
       {% for stock in stocks %}
       <label for ="{{stock['label']}}"> {{stock['title']}} </label>
       <div class="cnt" id = "{{stock['label']}}" style="display: table-row">

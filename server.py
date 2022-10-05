@@ -1,12 +1,9 @@
-from pydoc import render_doc
 import stockValueExtract
 import helper
-from flask import Flask, render_template, request, url_for, flash, redirect, session
+from flask import Flask, render_template, request, flash, session,redirect,url_for
 from flask_toastr import Toastr
 import pandas as pd
 import numpy as np
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 
 toastr = Toastr()
 
@@ -45,7 +42,7 @@ def stock():
 
 @app.route('/create/', methods=["POST", "GET"])
 def create():
-    if request.method == 'POST':
+    if request.method == "POST":
         app.logger.info("Extracting form data")
         threshold = request.form["threshold"]
         investing_amount = request.form["investing_amount"]

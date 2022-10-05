@@ -28,8 +28,8 @@ class stock():
     # init method or constructor
     def __init__(self, sector, stock_type, index):
         self.sector = sector
-        self.optimized_df = pd.DataFrame()
         self.metric_df = pd.DataFrame()
+        self.optimized_df = pd.DataFrame()
         self.avg_metric_df = pd.DataFrame()
         self.avg_metric_dictionary = {}
         self.stock_type = stock_type
@@ -44,16 +44,12 @@ class stock():
         financial_df = self.get_metric_data(financial, page)[helper.get_financial_metric()]
         technical = self.get_metric_data(ftechnical, page)[helper.get_techical_metric()]
         ownership = self.get_metric_data(fownership, page)[helper.get_ownership_metric()]
-        combined_data = pd.concat([valuation, financial_df, technical, ownership], join='inner', axis=1)
-        return combined_data
+        self.metric_df = pd.concat([valuation, financial_df, technical, ownership], join='inner', axis=1)
+        return self.metric_df
 
     def get_metric_data(self, function, page):
         try:
             filter_dic = {"Sector": self.sector, "Index": self.index}
-            #if self.stock_type == helper.StockType.GROWTH.value:
-               # filter_dic.update({"P/E": helper.PEFilter.HIGH.value})
-           # elif self.stock_type == helper.StockType.VALUE.value:
-               # filter_dic.update({"P/E": helper.PEFilter.LOW.value})
             function.set_filter(filters_dict=filter_dic)
             self.metric_df = function.screener_view(select_page=page)
         except Exception as e:
@@ -71,7 +67,6 @@ class stock():
         self.avg_metric_df = pd.concat(
             [overview, valuation], axis=1, join='inner')
         self.avg_metric_df = self.avg_metric_df.loc[self.avg_metric_df['Name'] == self.sector]
-        print("AVGE DF", self.avg_metric_df)
         return self.avg_metric_df
 
     def update_avg_metric_dic(self):
@@ -142,9 +137,6 @@ class stock():
         self.calculate_weight_expected_return(df)
         actual_return = df['Expected Return'].replace(np.nan, 0).to_numpy()
         actual_expected_return = sum(actual_return)
-        print(actual_expected_return)
-        print(self.desired_return)
-        print(self.optimal_number_stocks)
 
         if actual_expected_return > self.desired_return:
             self.previous_highest_expected_return = actual_expected_return
