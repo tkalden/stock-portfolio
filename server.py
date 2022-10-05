@@ -4,6 +4,8 @@ from flask import Flask, render_template, request, flash, session,redirect,url_f
 from flask_toastr import Toastr
 import pandas as pd
 import numpy as np
+import asyncio
+from array import array
 
 toastr = Toastr()
 
@@ -23,6 +25,7 @@ def index():
         session["sector"] = request.form.get('sector')
         session["index"] = request.form.get('index')
         session["stock_type"] = request.form.get('stock_type')
+        return redirect(url_for('stock'))
     return render_template('index.html', ticker_sector_lists=helper.index_select_attributes())
 
 
@@ -30,7 +33,7 @@ def index():
 def stock():
     stockValueExtractor = stockValueExtract.stock(
         session["sector"], session["stock_type"], session["index"])
-    combined_data = stockValueExtractor.get_stock_data(page = 1)
+    combined_data = asyncio.run(stockValueExtractor.get_stock_data_for_pages(4))
     strength_calculated_df = stockValueExtractor.calculate_strength_value(
         combined_data)
     strength_calculated_df.reset_index(drop=True, inplace=True)
@@ -77,8 +80,6 @@ def portfolio():
      df.reset_index(drop=True,inplace=True)
      session["portfolio"] = df.to_dict()
      return render_template('portfolio.html', tables=[pd.DataFrame(session["portfolio"]).to_html(classes='data', header="true")])
-
-
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')

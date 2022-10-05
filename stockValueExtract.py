@@ -2,6 +2,8 @@
 import pandas as pd
 import numpy as np
 import helper
+import asyncio
+import time
 from finvizfinance.group.overview import Overview as Goverview
 from finvizfinance.group.valuation import Valuation as Gvaluation
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -39,23 +41,40 @@ class stock():
         self.threshold = 0
         self.desired_return = 0
     
-    def get_stock_data(self,page):
-        valuation = self.get_metric_data(fvaluation, page)[helper.get_valuation_metric()]
-        financial_df = self.get_metric_data(financial, page)[helper.get_financial_metric()]
-        technical = self.get_metric_data(ftechnical, page)[helper.get_techical_metric()]
-        ownership = self.get_metric_data(fownership, page)[helper.get_ownership_metric()]
-        self.metric_df = pd.concat([valuation, financial_df, technical, ownership], join='inner', axis=1)
-        return self.metric_df
+    async def get_stock_data_per_page(self,page):
+        print("Getting stock data")
+        valuation = await self.get_metric_data(fvaluation, page)
+        financial_df = await self.get_metric_data(financial, page)
+        technical = await self.get_metric_data(ftechnical, page)
+        ownership =  await self.get_metric_data(fownership, page)
+        print("Done with page:", page)
+        return pd.concat([valuation[helper.get_valuation_metric()], financial_df[helper.get_financial_metric()], technical[helper.get_techical_metric()], ownership[helper.get_ownership_metric()]], join='inner', axis=1)
 
-    def get_metric_data(self, function, page):
-        try:
-            filter_dic = {"Sector": self.sector, "Index": self.index}
-            function.set_filter(filters_dict=filter_dic)
-            self.metric_df = function.screener_view(select_page=page)
-        except Exception as e:
-            print("An exception occurred", e)
-            pass
+    async def get_stock_data_for_pages(self, endPage):
+        print(f"started at {time.strftime('%X')}")
+        df = []
+        page = 1
+        while page <= endPage:
+            df.append(await self.get_stock_data_per_page(page))
+            page+=1
+            await asyncio.sleep(1)
+        self.metric_df = pd.concat(df,axis = 0)
+        print(f"finished at {time.strftime('%X')}")
         return self.metric_df
+       
+    async def get_metric_data(self, function, page):
+        df = pd.DataFrame()
+        sleep = 1
+        filter_dic = {"Sector": self.sector, "Index": self.index}
+        function.set_filter(filters_dict=filter_dic)
+        try: 
+            df = function.screener_view(select_page=page)
+        except Exception as e:
+            print('Error! Code: {c}, Message, {m}'.format(c = type(e).__name__, m = str(e)))
+            await asyncio.sleep(sleep)
+            print("Trying to get data again after", sleep)
+            df = function.screener_view(select_page=page)
+        return df
 
     def update_avg_metric_df(self):
         gOverview = Goverview()
