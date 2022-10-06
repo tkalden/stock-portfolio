@@ -58,27 +58,8 @@ def get_stock_type():
     return [StockType.VALUE.value, StockType.GROWTH.value]
 
 # convert to dictionary
-
-
 def get_valuation_metric():
-    return ['Ticker', 'P/E', 'Fwd P/E', 'PEG', 'P/B', 'P/C', 'Price']
-
-
-def get_financial_metric():
-    return ["Dividend", "ROE", "ROI"]
-
-
-def get_ownership_metric():
-    return ['Insider Own']
-
-
-def get_techical_metric():
-    return ['Beta']
-
-
-def get_techical_metric():
-    return ['Beta']
-
+    return ['Ticker', 'P/E', 'Fwd P/E', 'PEG', 'P/B', 'P/C', 'Price','Dividend', 'ROE', 'ROI','Insider Own','Beta']
 
 def get_goverview_metric():
     return ['Dividend']
@@ -98,6 +79,11 @@ class StockType(Enum):
 class PEFilter(Enum):
     HIGH = 'Over 25'
     LOW = 'Under 25'
+
+class ErrorCode(Enum):
+    INVALID_PAGE = "01"
+    TOO_MANY_REQUEST = "02"
+    OTHERS = "03"
 
 
 class FunctionEnum(Enum):

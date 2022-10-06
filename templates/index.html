@@ -2,7 +2,7 @@
 
 {% block content %}
 <h1>{% block title %} Select your investement choice {% endblock %}</h1>
-<form class="form-inline" method="post" action="{{ url_for('index') }}">
+<form class="form-inline" method="post" action="{{ url_for('stock') }}">
             {% for ts in ticker_sector_lists %}
             <label for ="{{ts['label']}}"> {{ts['title']}} </label>
             <div class="select" id = "{{ts['label']}}">

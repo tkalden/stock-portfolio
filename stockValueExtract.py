@@ -4,6 +4,7 @@ import numpy as np
 import helper
 import asyncio
 import time
+import logging
 from finvizfinance.group.overview import Overview as Goverview
 from finvizfinance.group.valuation import Valuation as Gvaluation
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -16,6 +17,7 @@ from finvizfinance.screener.performance import Performance
 from finvizfinance.screener.overview import Overview
 from finvizfinance.screener.technical import Technical
 
+
 foverview = Overview()
 fvaluation = Valuation()
 fownership = Ownership()
@@ -23,8 +25,7 @@ ftechnical = Technical()
 fperformance = Performance()
 financial = Financial()
 ticker = Ticker()
-
-
+logging.basicConfig(level = logging.INFO)
 
 class stock():
     # init method or constructor
@@ -41,41 +42,34 @@ class stock():
         self.threshold = 0
         self.desired_return = 0
     
-    async def get_stock_data_per_page(self,page):
-        print("Getting stock data")
-        valuation = await self.get_metric_data(fvaluation, page)
-        financial_df = await self.get_metric_data(financial, page)
-        technical = await self.get_metric_data(ftechnical, page)
-        ownership =  await self.get_metric_data(fownership, page)
-        print("Done with page:", page)
-        return pd.concat([valuation[helper.get_valuation_metric()], financial_df[helper.get_financial_metric()], technical[helper.get_techical_metric()], ownership[helper.get_ownership_metric()]], join='inner', axis=1)
-
     async def get_stock_data_for_pages(self, endPage):
-        print(f"started at {time.strftime('%X')}")
-        df = []
-        page = 1
-        while page <= endPage:
-            df.append(await self.get_stock_data_per_page(page))
-            page+=1
-            await asyncio.sleep(1)
-        self.metric_df = pd.concat(df,axis = 0)
-        print(f"finished at {time.strftime('%X')}")
+        logging.info(f"started at {time.strftime('%X')}")
+        combined_df = []
+        for page in range(1,endPage+1):
+            logging.info(f"Retrieving Data From Page : {page}")
+            df = []
+            for function in [fvaluation, financial, ftechnical, fownership]:
+                try:
+                    filter_dic = {"Sector": self.sector, "Index": self.index}
+                    function.set_filter(filters_dict=filter_dic)
+                    df.append(function.screener_view(select_page=page)) 
+                except Exception as e:
+                    if "Invalid page" in str(e):
+                        break
+                    elif "429 Client Error" in str(e):
+                        await asyncio.sleep(1) # to take care of 429 - many requests error
+                        df.append(function.screener_view(select_page=page)) 
+                    else:
+                        raise ValueError("An error occured")
+            else:
+                df1 = pd.concat(df, axis = 1)[helper.get_valuation_metric()]
+                combined_df.append(df1.T.drop_duplicates().T)
+                continue
+            break
+        self.metric_df = pd.concat(combined_df,axis = 0)
+        logging.info(f"finished at {time.strftime('%X')}")
         return self.metric_df
-       
-    async def get_metric_data(self, function, page):
-        df = pd.DataFrame()
-        sleep = 1
-        filter_dic = {"Sector": self.sector, "Index": self.index}
-        function.set_filter(filters_dict=filter_dic)
-        try: 
-            df = function.screener_view(select_page=page)
-        except Exception as e:
-            print('Error! Code: {c}, Message, {m}'.format(c = type(e).__name__, m = str(e)))
-            await asyncio.sleep(sleep)
-            print("Trying to get data again after", sleep)
-            df = function.screener_view(select_page=page)
-        return df
-
+ 
     def update_avg_metric_df(self):
         gOverview = Goverview()
         gValuation = Gvaluation()
@@ -127,7 +121,7 @@ class stock():
                            self.avg_metric_dictionary["peg"], 0, 1)
             div = np.where(df["Dividend"].replace(np.nan, 0)
                            < self.avg_metric_dictionary["div"], 1, 0)
-            beta = np.where(df["Beta"].replace(np.nan, 0) < 1, 1, 0)
+            beta = np.where(df["Beta"].replace(np.nan, 0) > 1, 1, 0)
             df["Strength"] = pe + fpe + pb + peg + div + beta
         else:
             raise ValueError("Stock Type must be Value or Growth")

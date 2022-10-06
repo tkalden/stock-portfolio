@@ -21,27 +21,27 @@ toastr.init_app(app)
 
 @app.route('/', methods=['POST','GET'])
 def index():
-    if request.method == "POST":
-        session["sector"] = request.form.get('sector')
-        session["index"] = request.form.get('index')
-        session["stock_type"] = request.form.get('stock_type')
-        return redirect(url_for('stock'))
     return render_template('index.html', ticker_sector_lists=helper.index_select_attributes())
 
 
 @app.route('/stock', methods=['POST', 'GET'])
 def stock():
-    stockValueExtractor = stockValueExtract.stock(
-        session["sector"], session["stock_type"], session["index"])
-    combined_data = asyncio.run(stockValueExtractor.get_stock_data_for_pages(4))
-    strength_calculated_df = stockValueExtractor.calculate_strength_value(
-        combined_data)
-    strength_calculated_df.reset_index(drop=True, inplace=True)
-    strength_calculated_df.to_pickle("./stock.pkl")
-    ticker_lists = strength_calculated_df["Ticker"].to_list()
-    session["ticker_lists"] = ticker_lists
-    return render_template('stocks.html', tables=[strength_calculated_df.to_html(classes='data', header="true")])
-
+    if request.method == "POST":
+        session["sector"] = request.form.get('sector')
+        session["index"] = request.form.get('index')
+        session["stock_type"] = request.form.get('stock_type')
+        stockValueExtractor = stockValueExtract.stock(
+            session["sector"], session["stock_type"], session["index"])
+        combined_data = asyncio.run(stockValueExtractor.get_stock_data_for_pages(4))
+        strength_calculated_df = stockValueExtractor.calculate_strength_value(
+            combined_data)
+        strength_calculated_df.reset_index(drop=True, inplace=True)
+        strength_calculated_df.to_pickle("./stock.pkl")
+        ticker_lists = strength_calculated_df["Ticker"].to_list()
+        session["ticker_lists"] = ticker_lists
+        return render_template('stocks.html', tables=[strength_calculated_df.to_html(classes='data', header="true")])
+    elif request.method == "GET":
+        return render_template('stocks.html', tables=[pd.read_pickle("./stock.pkl").to_html(classes='data', header="true")])
 
 @app.route('/create/', methods=["POST", "GET"])
 def create():
