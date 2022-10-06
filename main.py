@@ -5,7 +5,8 @@ from flask_toastr import Toastr
 import pandas as pd
 import numpy as np
 import asyncio
-from array import array
+import os
+
 
 toastr = Toastr()
 
@@ -22,7 +23,6 @@ toastr.init_app(app)
 @app.route('/', methods=['POST','GET'])
 def index():
     return render_template('index.html', ticker_sector_lists=helper.index_select_attributes())
-
 
 @app.route('/stock', methods=['POST', 'GET'])
 def stock():
@@ -82,4 +82,4 @@ def portfolio():
      return render_template('portfolio.html', tables=[pd.DataFrame(session["portfolio"]).to_html(classes='data', header="true")])
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
