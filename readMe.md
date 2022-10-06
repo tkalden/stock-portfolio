@@ -4,13 +4,11 @@ The goal of this project is to build a portfolio for a list of stocks with the w
 
 ## 
 We pull metric data for a given stock from finviz website (https://finviz.com/quote.ashx?t={stock}&ty=c&ta=1&p=d). 
-For each stock in the list we compare its metric value against the condition, if the condition is satisfied strength value is incremented by 1. 
+For each stock in the list we compare its metric value against the avg value of sector it belongs to. 
 
-| Metric    | P/B | P/E     | P/C  | Forward P/E | PEG | EPS (ttm) | Dividend % | ROE  | ROI  | EPS Q/Q | Insider Own | Beta |
-| --------- | --- | ------- | ---- | ----------- | --- | --------- | ---------- | ---- | ---- | ------- | ----------- | ---- |
-| condition | < 1 | [10,25] | < 20 | <=  25      | < 1 | > 80      | > 2        | > 15 | >= 7 | > 80    | > 40        | < 1  |
+| P/B | P/E     | P/C  | Forward P/E | PEG | Dividend % | ROE  | ROI | Beta |
 
-A weight of individual stock is the ratio of
+Assumption is that for growth stock : higher value of these metrics except (dividend) is preffered whereas the opposite is true for the value stock. A weight of individual stock is the ratio of
 
 ```
 weight_A = strength_value_A / sum (strength_value) across all stocks
