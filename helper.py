@@ -69,7 +69,7 @@ def get_gvaluation_metric():
     return ['Name','P/E', 'Fwd P/E', 'PEG', 'P/B', 'P/C']
 
 def portfolio_attributes():
-    return ['Ticker','Price', 'Expected Return', 'Weight', 'Total Shares', 'Invested Amount']
+    return ['Ticker','price', 'expected_return', 'weight', 'total_shares', 'invested_amount']
 
 class StockType(Enum):
     VALUE = 'Value'

@@ -5,3 +5,5 @@ numpy
 asyncio
 flask_toastr
 finvizfinance
+google-cloud-bigquery
+db-dtypes
