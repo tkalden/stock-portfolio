@@ -1,10 +1,10 @@
+from math import comb
 import stockValueExtract
 import helper
 from flask import Flask, render_template, request, flash, session,redirect,url_for
 from flask_toastr import Toastr
 import pandas as pd
 import numpy as np
-import asyncio
 import os
 
 
@@ -32,10 +32,12 @@ def stock():
         session["stock_type"] = request.form.get('stock_type')
         stockValueExtractor = stockValueExtract.stock(
             session["sector"], session["stock_type"], session["index"])
-        combined_data = asyncio.run(stockValueExtractor.get_stock_data_for_pages(4))
+        combined_data = stockValueExtractor.get_stock_data_by_sector_and_index()
+        combined_data = np.round(combined_data, decimals=2)
         strength_calculated_df = stockValueExtractor.calculate_strength_value(
             combined_data)
         strength_calculated_df.reset_index(drop=True, inplace=True)
+        #need to think about how to cache this in the production
         strength_calculated_df.to_pickle("./stock.pkl")
         ticker_lists = strength_calculated_df["Ticker"].to_list()
         session["ticker_lists"] = ticker_lists
