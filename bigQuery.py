@@ -2,11 +2,9 @@ from google.oauth2 import service_account
 from google.cloud import bigquery
 import logging
 logging.basicConfig(level=logging.INFO)
-credentials = service_account.Credentials.from_service_account_file(
-    'stockdataextractor.json')
 
-project_id = 'stockdataextractor'
-client = bigquery.Client(credentials=credentials, project=project_id)
+
+client = bigquery.Client()
 
 
 def get_stock_data(index, sector):
