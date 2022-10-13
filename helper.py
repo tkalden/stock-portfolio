@@ -43,11 +43,11 @@ def get_optimization_parameters():
 
 
 def get_sector():
-    return ['Basic Materials', 'Energy', 'Communication Services', 'Consumer Cyclical', 'Healthcare', 'Industrials', 'Real Estate', 'Financial', 'Consumer Defensive', 'Technology', 'Utilities']
+    return ['Basic Materials', 'Energy', 'Communication Services', 'Consumer Cyclical', 'Healthcare', 'Industrials', 'Real Estate', 'Financial', 'Consumer Defensive', 'Technology', 'Utilities', 'Any']
 
 
 def get_index():
-    return ['DJIA', 'S&P 500']
+    return ['DJIA', 'S&P 500','Any']
 
 
 def get_exchange():

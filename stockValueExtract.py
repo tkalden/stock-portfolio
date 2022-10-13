@@ -15,9 +15,8 @@ class stock():
     def __init__(self, sector, stock_type, index):
         self.sector = sector
         self.optimized_df = pd.DataFrame()
-        self.avg_metric_df = pd.DataFrame()
         self.metric_df = pd.DataFrame()
-        self.avg_metric_dictionary = {}
+        self.avg_metric_df = pd.DataFrame()
         self.stock_type = stock_type
         self.index = index
         self.optimal_number_stocks = 0
@@ -29,63 +28,50 @@ class stock():
         self.metric_df = bigQuery.get_stock_data(self.index, self.sector)
         self.round_decimal_place(self.metric_df,['insider_own','dividend','roi','roe'])
         return self.metric_df
-    
+
+    def update_avg_metric_dic(self):
+        if self.sector == 'Any':
+            df = bigQuery.get_average_metric()
+            df = df.drop(columns = ['Sector'])
+            df = df.astype(float)
+            df = df.mean(axis=0)
+            self.avg_metric_df = df.astype(str)
+        else:
+            self.avg_metric_df = bigQuery.get_average_metric_by_sector(self.sector).squeeze()
+        return self.avg_metric_df
+
     def round_decimal_place(self,df,roundArray):
         for a in roundArray:
             df[a] = np.round(df[a].astype(float), decimals = 2)
         return df
  
-    def update_avg_metric_df(self):
-        gOverview = Goverview()
-        gValuation = Gvaluation()
-        overview = gOverview.screener_view(group='Sector', order='Name')[
-            helper.get_goverview_metric()]
-        valuation = gValuation.screener_view(group='Sector', order='Name')[
-            helper.get_gvaluation_metric()]
-        self.avg_metric_df = pd.concat(
-            [overview, valuation], axis=1, join='inner')
-        self.avg_metric_df = self.avg_metric_df.loc[self.avg_metric_df['Name'] == self.sector]
-        return self.avg_metric_df
-
-    def update_avg_metric_dic(self):
-        self.update_avg_metric_df()
-        self.avg_metric_dictionary.update({
-            "pe": str(self.avg_metric_df['P/E'].iat[0]),
-            "fpe": str(self.avg_metric_df['Fwd P/E'].iat[0]),
-            "pc": str(self.avg_metric_df['P/C'].iat[0]),
-            "pb": str(self.avg_metric_df['P/B'].iat[0]),
-            "peg": str(self.avg_metric_df['PEG'].iat[0]),
-            "div": float(self.avg_metric_df['Dividend'].iat[0])})
-        return self.avg_metric_dictionary
-
     # need to refactor
     def calculate_strength_value(self, df):
         self.update_avg_metric_dic()
-        #df["pe"] = df["pe"]
         if self.stock_type == helper.StockType.VALUE.value:
-            pe = np.where(df["pe"].replace(np.nan,0) < str(self.avg_metric_dictionary["pe"]), 1, 0)
+            pe = np.where(df["pe"].replace(np.nan,0) < str(self.avg_metric_df["pe"]), 1, 0)
             fpe = np.where(df["fpe"].replace(np.nan, 0) <
-                           self.avg_metric_dictionary["fpe"], 1, 0)
+                           self.avg_metric_df["fpe"], 1, 0)
             pb = np.where(df["pb"].replace(np.nan, 0) <
-                          self.avg_metric_dictionary["pb"], 1, 0)
+                          self.avg_metric_df["pb"], 1, 0)
             peg = np.where(df["peg"].replace(np.nan, 0) <
-                           self.avg_metric_dictionary["peg"], 1, 0)
-            div = np.where(df["dividend"].replace(np.nan, 0)
-                           < self.avg_metric_dictionary["div"], 0, 1)
+                           self.avg_metric_df["peg"], 1, 0)
+            div = np.where(df["dividend"].replace(np.nan, 0).astype(str)
+                           < self.avg_metric_df["dividend"], 0, 1)
             beta = np.where(df["beta"].replace(np.nan, 0) < '1', 0, 1)
             df["strength"] = pe + fpe + pb + peg + div + beta
 
         elif self.stock_type == helper.StockType.GROWTH.value:
             pe = np.where(df["pe"].replace(np.nan, 0) <
-                          self.avg_metric_dictionary["pe"], 0, 1)
+                          self.avg_metric_df["pe"], 0, 1)
             fpe = np.where(df["fpe"].replace(np.nan, 0) <
-                           self.avg_metric_dictionary["fpe"], 0, 1)
+                           self.avg_metric_df["fpe"], 0, 1)
             pb = np.where(df["pb"].replace(np.nan, 0) <
-                          self.avg_metric_dictionary["pb"], 0, 1)
+                          self.avg_metric_df["pb"], 0, 1)
             peg = np.where(df["peg"].replace(np.nan, 0) <
-                           self.avg_metric_dictionary["peg"], 0, 1)
-            div = np.where(df["dividend"].replace(np.nan, 0)
-                           < self.avg_metric_dictionary["div"], 1, 0)
+                           self.avg_metric_df["peg"], 0, 1)
+            div = np.where(df["dividend"].replace(np.nan, 0).astype(str)
+                           < self.avg_metric_df["dividend"], 1, 0)
             beta = np.where(df["beta"].replace(np.nan, 0) > '1', 1, 0)
             df["strength"] = pe + fpe + pb + peg + div + beta
         else:
