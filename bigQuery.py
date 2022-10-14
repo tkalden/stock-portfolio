@@ -40,21 +40,7 @@ def get_average_metric():
 
 def get_query(index,sector):
     query = ""
-    if index == 'Any' and sector == 'Any':
-        query = """
-            SELECT * 
-            FROM  `stockdataextractor.stock.screen-data` 
-            ORDER BY Ticker DESC
-            LIMIT 1000 """
-    elif index == 'Any' and sector != 'Any':
-        query = """
-            SELECT *
-            FROM  `stockdataextractor.stock.screen-data`
-            WHERE
-            Sector = @sector 
-            ORDER BY Ticker DESC
-            LIMIT 1000 """
-    elif sector == 'Any' and index != 'Any':
+    if sector == 'Any' and index != 'Any':
         query = """
             SELECT *
             FROM  `stockdataextractor.stock.screen-data`

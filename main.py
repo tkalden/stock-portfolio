@@ -7,7 +7,6 @@ import pandas as pd
 import numpy as np
 import os
 
-
 toastr = Toastr()
 
 config = {
@@ -22,7 +21,7 @@ toastr.init_app(app)
 
 @app.route('/', methods=['POST','GET'])
 def index():
-    return render_template('index.html', ticker_sector_lists=helper.index_select_attributes())
+    return render_template('index.html', ticker_sector_lists=helper.index_select_attributes(), title= "Select Your Investment Strategy")
 
 @app.route('/stock', methods=['POST', 'GET'])
 def stock():
@@ -37,15 +36,21 @@ def stock():
         strength_calculated_df = stockValueExtractor.calculate_strength_value(
             combined_data)
         strength_calculated_df.reset_index(drop=True, inplace=True)
+        strength_calculated_df  = strength_calculated_df.fillna(0)
         #need to think about how to cache this in the production
         strength_calculated_df.to_pickle("./stock.pkl")
         ticker_lists = strength_calculated_df["Ticker"].to_list()
         session["ticker_lists"] = ticker_lists
-        return render_template('stocks.html', tables=[strength_calculated_df.to_html(classes='data', header="true")])
+        return render_template('stocks.html')
     elif request.method == "GET":
-        return render_template('stocks.html', tables=[pd.read_pickle("./stock.pkl").to_html(classes='data', header="true")])
+        #if there is no data show empty data
+        return render_template('stocks.html')
 
-@app.route('/create/', methods=["POST", "GET"])
+@app.route('/stock/data')
+def stock_data():
+    return {'data': pd.read_pickle("./stock.pkl").to_dict('records')}
+
+@app.route('/create', methods=["POST", "GET"])
 def create():
     if request.method == "POST":
         app.logger.info("Extracting form data")
@@ -70,18 +75,22 @@ def create():
             app.logger.info("Optimizing the stock data")
             portfolio = stockValueExtract.stock(session["sector"], session["stock_type"], session["index"]).build_portfolio(df=pd.read_pickle("./stock.pkl"), selected_ticker_list=session["selected_ticker_lists"], desired_return=np.divide(int(
                 expected_return_value), 100), threshold=int(threshold), investing_amount=int(investing_amount))
-            session["optimized_net_result"] = portfolio.to_dict()
+            portfolio = np.round(portfolio, decimals=2)
+            portfolio.to_pickle("./portfolio.pkl")
+            print("GOT HERE")
             return redirect(url_for('portfolio'))
 
     return render_template('create.html', ticker_lists=session["ticker_lists"], stocks=helper.get_stock_dict(session["ticker_lists"], len(set(session["ticker_lists"]))), parameters=helper.get_optimization_parameters())
 
 
+
 @app.route('/portfolio', methods=["GET","POST"])
 def portfolio():
-     df = pd.DataFrame(session["optimized_net_result"])[helper.portfolio_attributes()]
-     df.reset_index(drop=True,inplace=True)
-     session["portfolio"] = df.to_dict()
-     return render_template('portfolio.html', tables=[pd.DataFrame(session["portfolio"]).to_html(classes='data', header="true")])
+     return render_template('portfolio.html')
+
+@app.route('/portfolio/data')
+def portfolio_data():
+    return {'data': pd.read_pickle("./portfolio.pkl").to_dict('records')}
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
