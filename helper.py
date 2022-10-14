@@ -47,7 +47,7 @@ def get_sector():
 
 
 def get_index():
-    return ['DJIA', 'S&P 500','Any']
+    return ['DJIA', 'S&P 500']
 
 
 def get_exchange():

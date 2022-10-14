@@ -1,11 +1,56 @@
 {% extends 'base.html' %}
+{% block title %} Stock Lists {% endblock %}
 {% block content %}
-<h1>{% block title %} Top Stocks {% endblock %}</h1>
-<table id="stocks">
-    {% for table in tables %}
-    {{ table|safe }}
-    {% endfor %}
-</table>
-<br>
-<a href="/create/"> <button> Build Portfolio </button> </a>
+  <table id="data" class="table table-striped">
+    <thead>
+      <tr>
+        <th>Ticker</th>
+        <th>Sector</th>
+        <th>Index</th>
+        <th>P/E</th>
+        <th>Fwd P/E</th>
+        <th>PEG</th>
+        <th>P/C</th>
+        <th>P/B</th>
+        <th>Insider Own</th>
+        <th>Pirce</th>
+        <th>Dividend</th>
+        <th>ROE</th>
+        <th>ROI</th>
+        <th>Beta</th>
+        <th>Strength</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    $(document).ready(function () {
+      $('#data').DataTable({
+        order: [[14, 'desc']],
+        ajax: '/stock/data',
+        columns: [
+          {data: 'Ticker'},
+          {data: 'Sector'},
+          {data: 'Index', searchable: false},
+          {data: 'pe', searchable: false},
+          {data: 'fpe', searchable: false},
+          {data: 'peg', searchable: false},
+          {data: 'pc', searchable: false},
+          {data: 'pb', searchable: false},
+          {data: 'insider_own',searchable: false},
+          {data: 'price',searchable: false},
+          {data: 'dividend',searchable: false},
+          {data: 'roe', searchable: false},
+          {data: 'roi',searchable: false},
+          {data: 'beta', orderable: false},
+          {data: 'strength',searchable: false}
+        ],
+      });
+    });
+  </script>
+  <a href="/create"> <button> Build Portfolio </button> </a>
 {% endblock %}

@@ -1,31 +1,25 @@
 {% extends 'base.html' %}
-
+{% block title %} Stock Optmization Parameters {% endblock %}
 {% block content %}
-    <h1>{% block title %}Stock Optmization Parameters{% endblock %}</h1>
-    <form class="form-inline" method="post">
-      {% for stock in stocks %}
-      <label for ="{{stock['label']}}"> {{stock['title']}} </label>
-      <div class="cnt" id = "{{stock['label']}}" style="display: table-row">
-          <select id = "stock[]" name="stock[]">
-              {% for e in stock['ticker_list']  %}
-                  <option value="{{ e }}" selected>{{ e }}</option>
-              {% endfor %}
-          </select>
-      </div>
-      {% endfor %}
-
-      {% for parameter in parameters %}
-          <label for = "{{ parameter['label'] }}">{{ parameter['title'] }}</label>
-           <br>
-           <div>
-          <input type="text" name="{{ parameter['label'] }}"
-           placeholder= "{{ parameter['placeholder'] }}"
-           class='cnt'
-           value="{{ request.form[parameter['label']] }}"></input>
-          </div>
-        {% endfor %}
-        <br>
-      <button type="submit" class="btn btn-default"> Optimize </button>
-    </form>
+<form class="form-inline" method="post">
+    {% for stock in stocks %}
+    <div class="cnt" id = "{{stock['label']}}">
+        <label for ="{{stock['label']}}"> {{stock['title']}} </label>
+        <select id = "stock[]" name="stock[]">
+            {% for e in stock['ticker_list']  %}
+                <option value="{{ e }}" selected>{{ e }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endfor %}
+    {% for parameter in parameters %}
+        <label for = "{{ parameter['label'] }}">{{ parameter['title'] }}</label>
+        <input type="text" name="{{ parameter['label'] }}"
+        placeholder= "{{ parameter['placeholder'] }}"
+        class='cnt'
+        value="{{ request.form[parameter['label']] }}"></input>
+    {% endfor %}
+</form>
+<button> Optimize </button> </a>
 {% endblock %}
 
