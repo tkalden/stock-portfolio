@@ -72,12 +72,12 @@ def create():
         elif expected_return_value == '':
             flash('Expected Return Value must not be blank')
         else:
+            print("HERE")
             app.logger.info("Optimizing the stock data")
             portfolio = stockValueExtract.stock(session["sector"], session["stock_type"], session["index"]).build_portfolio(df=pd.read_pickle("./stock.pkl"), selected_ticker_list=session["selected_ticker_lists"], desired_return=np.divide(int(
                 expected_return_value), 100), threshold=int(threshold), investing_amount=int(investing_amount))
             portfolio = np.round(portfolio, decimals=2)
             portfolio.to_pickle("./portfolio.pkl")
-            print("GOT HERE")
             return redirect(url_for('portfolio'))
 
     return render_template('create.html', ticker_lists=session["ticker_lists"], stocks=helper.get_stock_dict(session["ticker_lists"], len(set(session["ticker_lists"]))), parameters=helper.get_optimization_parameters())
