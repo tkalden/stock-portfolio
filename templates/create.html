@@ -2,16 +2,19 @@
 {% block title %} Stock Optmization Parameters {% endblock %}
 {% block content %}
 <form class="form-inline" method="post">
+    <h3> Select Tickers </h3>
+    <b-row>
     {% for stock in stocks %}
-    <div class="cnt" id = "{{stock['label']}}">
-        <label for ="{{stock['label']}}"> {{stock['title']}} </label>
+    <b-col class="cnt" id = "{{stock['label']}}">
         <select id = "stock[]" name="stock[]">
             {% for e in stock['ticker_list']  %}
                 <option value="{{ e }}" selected>{{ e }}</option>
             {% endfor %}
         </select>
-    </div>
+    </b-col>
     {% endfor %}
+    </b-row>
+    <h3> Select Optimization Parameters </h3>
     {% for parameter in parameters %}
         <label for = "{{ parameter['label'] }}">{{ parameter['title'] }}</label>
         <input type="text" name="{{ parameter['label'] }}"
@@ -19,7 +22,8 @@
         class='cnt'
         value="{{ request.form[parameter['label']] }}"></input>
     {% endfor %}
+    <br>
+    <button type="submit"> Optimize </button>
 </form>
-<button> Optimize </button> </a>
 {% endblock %}
 
