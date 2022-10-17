@@ -30,6 +30,10 @@
       min-height: 80px;
       padding : 20px
     }
+    
+.topnav-right {
+    float: right;
+    }
 
 
 
