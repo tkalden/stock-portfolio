@@ -1,4 +1,5 @@
 
+from cmath import nan
 import pandas as pd
 import numpy as np
 import helper
@@ -35,9 +36,13 @@ class stock():
             df = df.drop(columns = ['Sector'])
             df = df.astype(float)
             df = df.mean(axis=0)
-            self.avg_metric_df = df.astype(str)
+            self.avg_metric_df = df.astype(float)
         else:
-            self.avg_metric_df = bigQuery.get_average_metric_by_sector(self.sector).squeeze()
+           df = bigQuery.get_average_metric_by_sector(self.sector)
+           df = df.drop(columns = ['Sector'])
+           df = df.astype(float)
+           df = df.squeeze() # to convert it to series 
+           self.avg_metric_df = df
         return self.avg_metric_df
 
     def round_decimal_place(self,df,roundArray):
@@ -47,33 +52,22 @@ class stock():
  
     # need to refactor
     def calculate_strength_value(self, df):
-        self.update_avg_metric_dic()
+        attributes = ["dividend","pe","fpe","pb","beta"]
+        df["strength"] = 0
+        for col in attributes:
+            if col == 'beta':
+                df["strength"] = df["strength"] - df[col].astype(float)
+            else:
+                df[col].replace('None', np.nan, inplace=True)
+                new_col = df[col].astype(float) - self.avg_metric_df[col]           
+                if col == 'dividend': 
+                    df["strength"] = df["strength"] + new_col
+                else:
+                    df["strength"] = df["strength"] - new_col
         if self.stock_type == helper.StockType.VALUE.value:
-            pe = np.where(df["pe"].replace(np.nan,0) < str(self.avg_metric_df["pe"]), 1, 0)
-            fpe = np.where(df["fpe"].replace(np.nan, 0) <
-                           self.avg_metric_df["fpe"], 1, 0)
-            pb = np.where(df["pb"].replace(np.nan, 0) <
-                          self.avg_metric_df["pb"], 1, 0)
-            peg = np.where(df["peg"].replace(np.nan, 0) <
-                           self.avg_metric_df["peg"], 1, 0)
-            div = np.where(df["dividend"].replace(np.nan, 0).astype(str)
-                           < self.avg_metric_df["dividend"], 0, 1)
-            beta = np.where(df["beta"].replace(np.nan, 0) < '1', 0, 1)
-            df["strength"] = pe + fpe + pb + peg + div + beta
-
+            df["strength"] = df["strength"]
         elif self.stock_type == helper.StockType.GROWTH.value:
-            pe = np.where(df["pe"].replace(np.nan, 0) <
-                          self.avg_metric_df["pe"], 0, 1)
-            fpe = np.where(df["fpe"].replace(np.nan, 0) <
-                           self.avg_metric_df["fpe"], 0, 1)
-            pb = np.where(df["pb"].replace(np.nan, 0) <
-                          self.avg_metric_df["pb"], 0, 1)
-            peg = np.where(df["peg"].replace(np.nan, 0) <
-                           self.avg_metric_df["peg"], 0, 1)
-            div = np.where(df["dividend"].replace(np.nan, 0).astype(str)
-                           < self.avg_metric_df["dividend"], 1, 0)
-            beta = np.where(df["beta"].replace(np.nan, 0) > '1', 1, 0)
-            df["strength"] = pe + fpe + pb + peg + div + beta
+            df["strength"] = -1*df["strength"]
         else:
             raise ValueError("Stock Type must be Value or Growth")
         return df.sort_values(by="strength", ascending=False)
@@ -97,6 +91,7 @@ class stock():
         return self.optimized_df
 
     def optimize_expected_return(self, number_of_stocks):
+        df = self.optimized_df.sort_values(by='strength', ascending=False) #we want to remove the lowest strength iteratively till we ge the optimat expected return
         df = self.optimized_df.head(number_of_stocks)
         self.calculate_weight_expected_return(df)
         actual_return = df['expected_return'].replace(np.nan, 0).to_numpy()

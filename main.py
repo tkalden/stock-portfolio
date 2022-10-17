@@ -32,15 +32,16 @@ def stock():
         stockValueExtractor = stockValueExtract.stock(
             session["sector"], session["stock_type"], session["index"])
         combined_data = stockValueExtractor.get_stock_data_by_sector_and_index()
-        combined_data = np.round(combined_data, decimals=2)
+        stockValueExtractor.update_avg_metric_dic()
         strength_calculated_df = stockValueExtractor.calculate_strength_value(
             combined_data)
+        strength_calculated_df = np.round(strength_calculated_df, decimals=2)
         strength_calculated_df.reset_index(drop=True, inplace=True)
         strength_calculated_df  = strength_calculated_df.fillna(0)
         #need to think about how to cache this in the production
         strength_calculated_df.to_pickle("./stock.pkl")
         ticker_lists = strength_calculated_df["Ticker"].to_list()
-        session["ticker_lists"] = ticker_lists
+        session["ticker_lists"] = sorted(ticker_lists)
         return render_template('stocks.html')
     elif request.method == "GET":
         #if there is no data show empty data
@@ -72,7 +73,6 @@ def create():
         elif expected_return_value == '':
             flash('Expected Return Value must not be blank')
         else:
-            print("HERE")
             app.logger.info("Optimizing the stock data")
             portfolio = stockValueExtract.stock(session["sector"], session["stock_type"], session["index"]).build_portfolio(df=pd.read_pickle("./stock.pkl"), selected_ticker_list=session["selected_ticker_lists"], desired_return=np.divide(int(
                 expected_return_value), 100), threshold=int(threshold), investing_amount=int(investing_amount))
@@ -80,7 +80,7 @@ def create():
             portfolio.to_pickle("./portfolio.pkl")
             return redirect(url_for('portfolio'))
 
-    return render_template('create.html', ticker_lists=session["ticker_lists"], stocks=helper.get_stock_dict(session["ticker_lists"], len(set(session["ticker_lists"]))), parameters=helper.get_optimization_parameters())
+    return render_template('create.html',ticker_lists=session["ticker_lists"], stocks=helper.get_stock_dict(session["ticker_lists"], len(set(session["ticker_lists"]))), parameters=helper.get_optimization_parameters())
 
 
 
