@@ -33,6 +33,7 @@ def stock():
             session["sector"], session["stock_type"], session["index"])
         combined_data = stockValueExtractor.get_stock_data_by_sector_and_index()
         stockValueExtractor.update_avg_metric_dic()
+        print(stockValueExtractor.update_avg_metric_dic()) 
         strength_calculated_df = stockValueExtractor.calculate_strength_value(
             combined_data)
         strength_calculated_df = np.round(strength_calculated_df, decimals=2)

@@ -56,10 +56,14 @@ class stock():
         df["strength"] = 0
         for col in attributes:
             if col == 'beta':
-                df["strength"] = df["strength"] - df[col].astype(float)
+                df["strength"] = df["strength"] - np.where(df[col].isnull(),0,df[col].astype(float))
             else:
+                #if any col value is nan then set the difference to 0 
                 df[col].replace('None', np.nan, inplace=True)
-                new_col = df[col].astype(float) - self.avg_metric_df[col]           
+                df[col].replace('nan', np.nan, inplace=True)
+                new_col = np.where(df[col].isnull(), 0, df[col].astype(float) - self.avg_metric_df[col])
+                print("COL", df[col])
+                print("NEW_COL", new_col)
                 if col == 'dividend': 
                     df["strength"] = df["strength"] + new_col
                 else:
@@ -70,6 +74,7 @@ class stock():
             df["strength"] = -1*df["strength"]
         else:
             raise ValueError("Stock Type must be Value or Growth")
+        print(df["strength"])
         return df.sort_values(by="strength", ascending=False)
 
     def calculate_weight_expected_return(self, df):
@@ -124,6 +129,8 @@ class stock():
     def build_portfolio(self, df, selected_ticker_list, threshold, desired_return, investing_amount):
         self.metric_df = df
         self.optimized_df = df[df.Ticker.isin(selected_ticker_list)]
+        self.optimized_df = self.optimized_df[(self.optimized_df['strength'] > 0) & (self.optimized_df['roi'] > 0)  ]
+        print(self.optimized_df)
         self.threshold = threshold
         self.desired_return = desired_return
         self.optimize_expected_return(
