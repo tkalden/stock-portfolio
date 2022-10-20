@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="wrapper">
+{% for chart in charts %}
+    <canvas id = "{{chart['id']}}" width = "400" height = "400"></canvas>
+{% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% for chart in charts %}
+<script>
+    var ctx = document.getElementById("{{chart['id']}}").getContext("2d")
+    var label = "{{chart['title']}}"
+    var barChart = new Chart(ctx, 
+    {
+        type : 'bar',
+        data : {
+            labels: {{chart['labels']|safe}},
+            datasets:[
+                {
+                     label : label,
+                     data : {{chart['values']|safe}},
+                     fill : false,
+                     backgroundColor: [
+                        'rgb(239, 23, 110)',
+                        'rgb(221, 133, 183)',
+                        'rgb(60, 63, 61)',
+                        'rgb(209, 52, 175)',
+                        'rgb(114, 108, 39)'
+                        ],
+                     lineTension : 0.1
+
+                }
+            ]
+        },
+        options : {
+            responsive : false
+        }
+
+    });
+</script>
+{% endfor %}
+{% endblock %}
+

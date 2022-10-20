@@ -18,6 +18,7 @@ app.config.from_mapping(config)
 
 toastr.init_app(app)
 
+stockValueExtractor = stockValueExtract.stock()
 
 @app.route('/', methods=['POST','GET'])
 def index():
@@ -29,19 +30,7 @@ def stock():
         session["sector"] = request.form.get('sector')
         session["index"] = request.form.get('index')
         session["stock_type"] = request.form.get('stock_type')
-        stockValueExtractor = stockValueExtract.stock(
-            session["sector"], session["stock_type"], session["index"])
-        combined_data = stockValueExtractor.get_stock_data_by_sector_and_index()
-        stockValueExtractor.update_avg_metric_dic()
-        print(stockValueExtractor.update_avg_metric_dic()) 
-        strength_calculated_df = stockValueExtractor.calculate_strength_value(
-            combined_data)
-        strength_calculated_df = np.round(strength_calculated_df, decimals=2)
-        strength_calculated_df.reset_index(drop=True, inplace=True)
-        strength_calculated_df  = strength_calculated_df.fillna(0)
-        #need to think about how to cache this in the production
-        strength_calculated_df.to_pickle("./stock.pkl")
-        ticker_lists = strength_calculated_df["Ticker"].to_list()
+        ticker_lists = stockValueExtractor.update_strength_data(sector=session["sector"], index =session["index"],stock_type = session["stock_type"])
         session["ticker_lists"] = sorted(ticker_lists)
         return render_template('stocks.html')
     elif request.method == "GET":
@@ -61,26 +50,12 @@ def create():
         expected_return_value = request.form["expected_return_value"]
         selected_ticker_lists = request.form.getlist("stock[]")
         session["selected_ticker_lists"] = selected_ticker_lists
-        if len(selected_ticker_lists) == 0:
-            flash('The stock list should not be null')
-        elif len(selected_ticker_lists) != len(set(selected_ticker_lists)):
-            flash('The stocks must be unique')
-        elif threshold == '':
-            flash('Threshold should not be blank')
-        elif len(set(selected_ticker_lists)) < int(float(threshold)):
-            flash('The stock list must be greater than threshold')
-        elif investing_amount == '':
-            flash('Investment Amount must not be blank')
-        elif expected_return_value == '':
-            flash('Expected Return Value must not be blank')
-        else:
-            app.logger.info("Optimizing the stock data")
-            portfolio = stockValueExtract.stock(session["sector"], session["stock_type"], session["index"]).build_portfolio(df=pd.read_pickle("./stock.pkl"), selected_ticker_list=session["selected_ticker_lists"], desired_return=np.divide(int(
-                expected_return_value), 100), threshold=int(threshold), investing_amount=int(investing_amount))
-            portfolio = np.round(portfolio, decimals=2)
-            portfolio.to_pickle("./portfolio.pkl")
+        validation = stockValueExtractor.validate_input(selected_ticker_lists, expected_return_value, threshold, investing_amount)
+        if validation:
+            flash(validation)
+        else :
+            stockValueExtractor.cache_portfolio(expected_return_value, threshold, investing_amount,selected_ticker_lists)
             return redirect(url_for('portfolio'))
-
     return render_template('create.html',ticker_lists=session["ticker_lists"], stocks=helper.get_stock_dict(session["ticker_lists"], len(set(session["ticker_lists"]))), parameters=helper.get_optimization_parameters())
 
 
@@ -92,6 +67,12 @@ def portfolio():
 @app.route('/portfolio/data')
 def portfolio_data():
     return {'data': pd.read_pickle("./portfolio.pkl").to_dict('records')}
+
+@app.route('/chart')
+def chart():
+    stockValueExtractor = stockValueExtract.stock()
+    charts = stockValueExtractor.get_chart_data("./chart.pkl")
+    return render_template('chart.html',charts = charts )
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
