@@ -71,6 +71,10 @@ def get_gvaluation_metric():
 def portfolio_attributes():
     return ['Ticker','price', 'expected_return', 'weight', 'total_shares', 'invested_amount']
 
+class IndexType(Enum):
+    SP500 = 'S&P 500'
+    DJIA = 'DJIA'
+
 class StockType(Enum):
     VALUE = 'Value'
     GROWTH = 'Growth'

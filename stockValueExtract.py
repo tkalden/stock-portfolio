@@ -69,7 +69,6 @@ class stock():
             df["strength"] = -1*df["strength"]
         else:
             raise ValueError("Stock Type must be Value or Growth")
-        print(df["strength"])
         return df.sort_values(by="strength", ascending=False)
 
     def calculate_weight_expected_return(self, df):
@@ -116,7 +115,9 @@ class stock():
             return
 
     def top_stocks(self,strength_df):
-        for sector in helper.get_sector():
+        sectors = helper.get_sector()
+        sectors.remove('Any')
+        for sector in sectors:
             df = strength_df[strength_df['Sector'] == sector].head(5)
             labels = df["Ticker"].values.tolist()
             values = df["strength"]
@@ -145,14 +146,14 @@ class stock():
         result = False
      return result
     
-    def get_chart_data(self,fileName):
+    def get_chart_data(self,fileName,stock_type):
         df = pd.DataFrame()
         if self.checkFile(fileName):
             df = pd.read_pickle(fileName)
         else:
             stocks_df = self.get_stock_data_by_sector_and_index('S&P 500','Any')
             self.update_avg_metric_dic('Any')
-            df = self.calculate_strength_value(stocks_df,'Value')
+            df = self.calculate_strength_value(stocks_df,stock_type)
             df.to_pickle(fileName)     
         return self.top_stocks(df)
 

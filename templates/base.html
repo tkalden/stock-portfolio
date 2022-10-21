@@ -16,11 +16,16 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-custom fixed-top navbar-dark bg-dark">
-        <a class="navbar-brand" href="{{ url_for('chart') }}">Home</a>
+    <nav class="navbar navbar-custom navbar-dark bg-dark fixed-top">
+        <div class="topnav-left">
+        <a class="navbar-brand">Home</a>
+        <a class="navbar-brand" href="{{ url_for('valueChart') }}">Top Value Stock</a>
+        <a class="navbar-brand" href="{{ url_for('growthChart') }}">Top Growth Stock</a>
+        </div>
         <div class="topnav-right">
         <a class="navbar-brand" href="{{ url_for('index') }}">Build Portfolio</a>
         <a class="navbar-brand" href="{{ url_for('portfolio') }}">My Portfolio</a>
+        </div>
     </nav>
         <h4>{{ title }}</h4>
         {% block content %} {% endblock %}

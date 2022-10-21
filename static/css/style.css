@@ -34,13 +34,12 @@
 .topnav-right {
     float: right;
     }
-    
+        
 .wrapper {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     }
-      
+
 
 
 

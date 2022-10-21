@@ -68,10 +68,16 @@ def portfolio():
 def portfolio_data():
     return {'data': pd.read_pickle("./portfolio.pkl").to_dict('records')}
 
-@app.route('/chart')
-def chart():
+@app.route('/value-chart')
+def valueChart():
     stockValueExtractor = stockValueExtract.stock()
-    charts = stockValueExtractor.get_chart_data("./chart.pkl")
+    charts = stockValueExtractor.get_chart_data("./valuechart.pkl",helper.StockType.VALUE.value)
+    return render_template('chart.html',charts = charts )
+
+@app.route('/growth-chart')
+def growthChart():
+    stockValueExtractor = stockValueExtract.stock()
+    charts = stockValueExtractor.get_chart_data("./growthchart.pkl", helper.StockType.GROWTH.value)
     return render_template('chart.html',charts = charts )
 
 if __name__ == "__main__":
