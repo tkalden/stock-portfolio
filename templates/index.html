@@ -4,13 +4,11 @@
 <form class="form-inline" method="post" action="{{ url_for('stock') }}">
             {% for ts in ticker_sector_lists %}
             <label for ="{{ts['label']}}"> {{ts['title']}} </label>
-            <div class="select" id = "{{ts['label']}}">
-                <select name="{{ts['label']}}">
+                <select class="form-select w-25"  name="{{ts['label']}}">
                     {% for e in ts['content']  %}
                         <option value="{{ e }}" selected>{{ e }}</option>
                     {% endfor %}
                 </select>
-            </div>
             {% endfor %}
 <button> Search </button> </a>
 </form>
