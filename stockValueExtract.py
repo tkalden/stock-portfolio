@@ -59,6 +59,7 @@ class stock():
                 df["strength"] = df["strength"] - np.where(df[col].isnull(),0,df[col].astype(float))
             else:
                 new_col = np.where(df[col].isnull(), 0, df[col].astype(float) - self.avg_metric_df[col])
+                new_col = np.divide(1,self.avg_metric_df[col])*new_col #percentage change 
                 if col == 'dividend': 
                     df["strength"] = df["strength"] + new_col
                 else:
