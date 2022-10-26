@@ -1,0 +1,45 @@
+<!-- Modal -->
+    <!-- Modal HTML Markup -->
+    <div id="optmizePortfolio" class="modal fade" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content bg-dark">
+                <div class="modal-body">
+                    <form id="portfolioForm" role="form" method="POST" action="">
+                    <h5 class = "text-white">Choose Stocks</h5>
+                     <div class="form-group row g-3">
+                        {% for stock in stocks %}
+                        <div class="cnt col" id = "{{stock['label']}}">
+                          <select id = "stock[]" name="stock[]" required>
+                            {% for e in stock['ticker_list']  %}
+                               {%if e == None%}
+                               <option class = "text-black" value="" >{{ e }}</option>
+                               {% endif %}
+                                <option value="{{ e }}" >{{ e }}</option>
+                            {% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+                      </div>
+                    <h5 class = "text-white">Choose Optimization Parameters</h5>
+                      <div class="form-group">
+                        {% for parameter in parameters %}
+                            <label class = "text-white" for = "{{ parameter['label'] }}">{{ parameter['title'] }}</label>
+                            <input 
+                            id = "{{ parameter['id'] }}"
+                            type="text" name="{{ parameter['label'] }}"
+                            placeholder= "{{ parameter['placeholder'] }}"
+                            class='cnt'
+                            value="{{ request.form[parameter['label']] }}"
+                            required></input>
+                        {% endfor %}
+                        </div>
+                        <br>
+                        <div>
+                        <input type="submit" name="btn" class = "bg-light text-dark" value="Optimize" >
+                        <input type="button" data-bs-dismiss="modal" class = "bg-light text-dark" value="Close"/>
+                       </div>
+                      </form>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+      </div><!-- /.modal -->

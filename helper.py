@@ -2,26 +2,27 @@ from enum import Enum
 
 
 def get_stock_dict(ticker_list,size):
-    total_list =  [{"label": "stock", "title": "Stock1", "ticker_list": ticker_list},
+    with_none_ticker_list = [None]
+    with_none_ticker_list.extend(ticker_list)
+    total_list =  [{"label": "stock", "title": "Stock1", "ticker_list": with_none_ticker_list},
             {"label": "stock", "title": "Stock2",
-                "ticker_list": ticker_list},
+                "ticker_list": with_none_ticker_list},
             {"label": "stock", "title": "Stock3",
-                "ticker_list": ticker_list},
+                "ticker_list": with_none_ticker_list},
             {"label": "stock", "title": "Stock4",
-                "ticker_list": ticker_list},
+                "ticker_list": with_none_ticker_list},
             {"label": "stock", "title": "Stock5",
-                "ticker_list": ticker_list},
+                "ticker_list": with_none_ticker_list},
             {"label": "stock", "title": "Stock6",
-                "ticker_list": ticker_list},
+                "ticker_list": with_none_ticker_list},
             {"label": "stock", "title": "Stock7",
-                "ticker_list": ticker_list},
+                "ticker_list": with_none_ticker_list},
             {"label": "stock", "title": "Stock8",
-                "ticker_list": ticker_list}]
+                "ticker_list": with_none_ticker_list}]
     if size < 10 :
         return total_list[0:size]
     else :
          return total_list
-
 
 def index_select_attributes():
     return [{"label": "index", "content": get_index(), "title": "Select Index"},
@@ -41,6 +42,13 @@ def get_optimization_parameters():
             {"label": "high_risk_flag",
              "title": "High Risk Flag (True or False)", "placeholder": "True or False"}]
 
+def get_pickle_file():
+    return {"dividend":"./pickleFiles/dividendchart.pkl",
+            "value":"./pickleFiles/valuechart.pkl",
+            "growth":"./pickleFiles/growthchart.pkl",
+             "stock":"./pickleFiles/stock.pkl",
+            "portfolio":"./pickleFiles/portfolio.pkl",
+        }
 
 def get_sector():
     return ['Basic Materials', 'Energy', 'Communication Services', 'Consumer Cyclical', 'Healthcare', 'Industrials', 'Real Estate', 'Financial', 'Consumer Defensive', 'Technology', 'Utilities', 'Any']
@@ -64,7 +72,6 @@ def get_valuation_metric():
 def get_goverview_metric():
     return ['Dividend']
 
-
 def get_gvaluation_metric():
     return ['Name','P/E', 'Fwd P/E', 'PEG', 'P/B', 'P/C']
 
@@ -78,6 +85,11 @@ class IndexType(Enum):
 class StockType(Enum):
     VALUE = 'Value'
     GROWTH = 'Growth'
+    NONE = ''
+
+class Metric(Enum):
+    STRENGTH = 'Strength'
+    DIVIDEND = 'Dividend'
 
 
 class PEFilter(Enum):

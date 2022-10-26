@@ -48,11 +48,14 @@
             ]
         },
         options : {
-            scales:{
-                y:{
-                    beginAtZero:true
-                }
-            },
+            responsive: true,
+            scales: {
+                yAxes: [{
+                     ticks: {
+                        beginAtZero: true
+                        }
+                    }]
+                },
             mainAspectRatio:false        }
 
     });

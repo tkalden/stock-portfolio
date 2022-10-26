@@ -27,9 +27,18 @@
     }
 
 .navbar {
-      min-height: 80px;
-      padding : 20px
+      padding : 10px
     }
+
+.navbar-nav > li{
+    padding-left:40px;
+    padding-right:40px;
+}
+
+.navbar-nav > li{
+    margin-left:50px;
+    margin-right:50px;
+  }
     
 .topnav-right {
     float: right;
@@ -59,6 +68,13 @@
     bottom: 0;
     width: 100%;
   }
+
+.first-col {
+    position: absolute;
+    width: 5em;
+    margin-left: -5em;
+}
+
 
 
 
