@@ -28,6 +28,8 @@
                 <div class="navbar-nav">
                     <a href="{{ url_for('valueChart') }}" class="nav-item nav-link text-white">Top Value Stocks</a>
                     <a href="{{ url_for('growthChart') }}" class="nav-item nav-link text-white">Top Growth Stocks</a>
+                    <a href="{{ url_for('dividendChart') }}" class="nav-item nav-link text-white">Top Dividend Stocks</a>
+                    <a href="#" class="nav-item nav-link text-white">Top Trading Stocks</a>
                     <a href="{{ url_for('index') }}" class="nav-item nav-link text-white">Build Portfolio</a>
                     <a href="{{ url_for('portfolio') }}"class="nav-item nav-link text-white">My Portfolio</a>
                 </div>
@@ -41,7 +43,6 @@
     <div id="page-container">
     <div class="body-content">
      {% block content %} {% endblock %}
-     <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
      <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
      <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.js"></script>
      {% block scripts %}{% endblock %}
@@ -52,7 +53,4 @@
     </footer>
     </div>
 </body>
-
-
-
 </html>

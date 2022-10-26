@@ -115,16 +115,21 @@ class stock():
                 self.optimized_df)
             return
 
-    def top_stocks(self,strength_df):
+    def top_stocks(self,df,base_metric):
         sectors = helper.get_sector()
         sectors.remove('Any')
         for sector in sectors:
-            df = strength_df[strength_df['Sector'] == sector].head(5)
-            labels = df["Ticker"].values.tolist()
-            values = df["strength"]
-            weight_values = np.divide(1,np.sum(values)) * values
-            weight_values = weight_values.values.tolist()
-            self.top_dict.append({"id": sector, "values":weight_values, "labels":labels, "title": sector})
+            new_df = df[df['Sector'] == sector].head(5)
+            labels = new_df["Ticker"].values.tolist()
+            if base_metric == 'Strength':
+                strength_values = new_df["strength"]
+                #strength_values = np.divide(1,np.sum(strength_values)) * strength_values
+                values = strength_values.values.tolist()
+                self.top_dict.append({"id": sector, "values":values, "labels":labels, "title": sector})
+            elif base_metric == 'Dividend':
+                dividend_values = new_df["dividend"] 
+                values = dividend_values.values.tolist()
+                self.top_dict.append({"id": sector, "values":values, "labels":labels, "title": sector})
         return self.top_dict
 
     def build_portfolio(self, df, selected_ticker_list, threshold, desired_return, investing_amount):
@@ -147,18 +152,21 @@ class stock():
         result = False
      return result
     
-    def get_chart_data(self,fileName,stock_type):
+    def get_chart_data(self,fileName,stock_type,base_metric):
         df = pd.DataFrame()
         if self.checkFile(fileName):
             df = pd.read_pickle(fileName)
         else:
-            stocks_df = self.get_stock_data_by_sector_and_index('S&P 500','Any')
-            self.update_avg_metric_dic('Any')
-            df = self.calculate_strength_value(stocks_df,stock_type)
-            df.to_pickle(fileName)     
-        return self.top_stocks(df)
-
-    def update_strength_data(self,sector,index,stock_type):
+            df = self.get_stock_data_by_sector_and_index('S&P 500','Any')
+            if base_metric == helper.Metric.STRENGTH.value:
+                self.update_avg_metric_dic('Any')
+                df = self.calculate_strength_value(df,stock_type)
+            elif base_metric == helper.Metric.DIVIDEND.value:
+                df = df.sort_values(by="dividend", ascending=False)
+            df.to_pickle(fileName)   
+        return self.top_stocks(df,base_metric)
+    
+    def update_strength_data(self,sector,index,stock_type,fileName):
         combined_data = self.get_stock_data_by_sector_and_index(index,sector)
         self.update_avg_metric_dic(sector)
         strength_calculated_df = self.calculate_strength_value(
@@ -167,16 +175,16 @@ class stock():
         strength_calculated_df.reset_index(drop=True, inplace=True)
         strength_calculated_df  = strength_calculated_df.fillna(0)
         #need to think about how to cache this in the production
-        strength_calculated_df.to_pickle("./stock.pkl")
+        strength_calculated_df.to_pickle(fileName)
         ticker_lists = strength_calculated_df["Ticker"].to_list()
         return ticker_lists
 
     def cache_portfolio(self,expected_return_value, threshold, investing_amount,selected_ticker_lists):
         logging.info("Optimizing the stock data")
-        portfolio = self.build_portfolio(df=pd.read_pickle("./stock.pkl"), selected_ticker_list=selected_ticker_lists, desired_return=np.divide(int(
+        portfolio = self.build_portfolio(df=pd.read_pickle(helper.get_pickle_file()["stock"]), selected_ticker_list=selected_ticker_lists, desired_return=np.divide(int(
                     expected_return_value), 100), threshold=int(threshold), investing_amount=int(investing_amount))
         portfolio = np.round(portfolio, decimals=2)
-        portfolio.to_pickle("./portfolio.pkl")
+        portfolio.to_pickle(helper.get_pickle_file()["portfolio"])
 
     def validate_input(self, selected_ticker_lists, expected_return_value, threshold, investing_amount):
         message = ""
