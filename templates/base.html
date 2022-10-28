@@ -18,9 +18,9 @@
 </head>
 
 <body>
-    <nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-dark text-white">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark text-white">
         <div class="container-fluid">
-            <a href="#" class="navbar-brand">Stocknity</a>
+            <a href="{{ url_for('home') }}" class="navbar-brand">Stocknity</a>
             <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -39,9 +39,9 @@
             </div>
         </div>
     </nav>
-    <h4>{{ title }}</h4>
     <div id="page-container">
     <div class="body-content">
+    <h4>{{ title }}</h4>
      {% block content %} {% endblock %}
      <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
      <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.js"></script>
