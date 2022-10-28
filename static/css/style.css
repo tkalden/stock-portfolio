@@ -51,22 +51,16 @@
 
 
 .body-content {
-    padding-top: 70px;
+    padding-top: 20px;
     padding-left: 20px;
     padding-right: 20px;
     padding-bottom: 5rem;
+    min-height: 80vh;
+
 }
 
 #page-container {
     position: relative;
-    min-height: 100vh;
-  }
-  
-  
-  #footer {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
   }
 
 .first-col {
@@ -75,6 +69,34 @@
     margin-left: -5em;
 }
 
+.pagination > li > a
+{
+    background-color: black;
+    color: white;
+}
+
+.pagination > li > a:focus,
+.pagination > li > a:hover,
+.pagination > li > span:focus,
+.pagination > li > span:hover
+{
+    color: white;
+    background-color: black;
+    border-color: white;
+}
+
+.pagination > .active > a
+{
+    color: white;
+    background-color: black !Important;
+    border: solid 1px white !Important;
+}
+
+.pagination > .active > a:hover
+{
+    background-color: black !Important;
+    border: solid 1px white;
+}
 
 
 
