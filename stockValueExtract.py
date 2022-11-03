@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import helper
 import bigQuery
+import annualReturn
 import logging
 from finvizfinance.group.overview import Overview as Goverview
 from finvizfinance.group.valuation import Valuation as Gvaluation
@@ -48,19 +49,22 @@ class stock():
             df[a] = np.round(df[a].astype(float), decimals = 2)
         return df
  
-    # need to refactor
+   # we can use return_risk_ratio as a multiplier instead of addition. There is a possibility 
+   #of calculating the coefficient of each of these attributes so that we give more weights to more relevant attribute
     def calculate_strength_value(self, df, stock_type):
-        attributes = ["dividend","pe","fpe","pb","beta"]
+        attributes = ["dividend","pe","fpe","pb","beta","return_risk_ratio"]
         df["strength"] = 0
         for col in attributes:
             df[col].replace('nan', np.nan, inplace=True)
             df[col].replace('None', np.nan, inplace=True)
             if col == 'beta':
                 df["strength"] = df["strength"] - np.where(df[col].isnull(),0,df[col].astype(float))
+            elif col == 'return_risk_ratio':
+                df["strength"] = df["strength"] + np.where(df[col].isnull(),0,df[col].astype(float))
             else:
                 new_col = np.where(df[col].isnull(), 0, df[col].astype(float) - self.avg_metric_df[col])
                 new_col = np.divide(1,self.avg_metric_df[col])*new_col #percentage change 
-                if col == 'dividend': 
+                if col == 'dividend' : 
                     df["strength"] = df["strength"] + new_col
                 else:
                     df["strength"] = df["strength"] - new_col
@@ -70,14 +74,15 @@ class stock():
             df["strength"] = -1*df["strength"]
         else:
             raise ValueError("Stock Type must be Value or Growth")
+        df = np.round(df, decimals=2) 
         return df.sort_values(by="strength", ascending=False)
 
-    def calculate_weight_expected_return(self, df):
+    def calculate_weighted_expected_return(self, df):
         strengthArray = df["strength"]
         strengthList = list(map(float, strengthArray))
         weight_array = np.divide(strengthList, sum(strengthList))
         df["weight"] = weight_array
-        df["expected_return"] = list(map(float,df["roi"].replace(np.nan, 0))) * df["weight"]
+        df["weighted_expected_return"] = df["expected_annual_return"] * df["weight"]
         return df
 
     def calculate_portfolio_value_distribution(self, investing_amount):
@@ -89,31 +94,35 @@ class stock():
         self.optimized_df['total_shares'] = np.divide(
             self.optimized_df['invested_amount'], self.optimized_df['price'].astype(float))
         return self.optimized_df
-
+    
+    """Returns the optimal number of stocks from the top strength stocks that give the expected
+    return equal or higher than the desired expected return
+        :param number_of_stocks: iterative number of stocks 
+        :param threshold: minimum number of stocks
+        :param desired_return: desired expected return 
+        :returns: optimal portfolio 
+    """
     def optimize_expected_return(self, number_of_stocks, threshold,desired_return):
-        df = self.optimized_df.sort_values(by='strength', ascending=False) #we want to remove the lowest strength iteratively till we ge the optimat expected return
-        df = self.optimized_df.head(number_of_stocks)
-        self.calculate_weight_expected_return(df)
-        actual_return = df['expected_return'].replace(np.nan, 0).to_numpy()
+        #we want to remove the lowest strength iteratively till we get the optimal expected return
+        if number_of_stocks < threshold:
+            return  
+        df = self.optimized_df.sort_values(by='strength', ascending=False) 
+        self.calculate_weighted_expected_return(df)
+        df = df.sort_values(by='weighted_expected_return', ascending=False) 
+        df = df.head(number_of_stocks)
+        actual_return = df['weighted_expected_return'].replace(np.nan, 0).to_numpy()
         actual_expected_return = sum(actual_return)
-
-        if actual_expected_return > desired_return:
-            self.previous_highest_expected_return = actual_expected_return
+        actual_greater_than_desired = actual_expected_return > desired_return
+        actual_greater_than_previous_actual = actual_expected_return > self.previous_highest_expected_return 
+        if actual_greater_than_desired:
             self.optimal_number_stocks = number_of_stocks
-            self.desired_return = actual_expected_return
-
-        elif actual_expected_return > self.previous_highest_expected_return:
-            self.previous_highest_expected_return = actual_expected_return
-            self.optimal_number_stocks = number_of_stocks
-
-        if number_of_stocks > threshold:
-            return self.optimize_expected_return(number_of_stocks - 1,threshold,desired_return)
-        else:
-            self.optimized_df = self.optimized_df.head(
-                self.optimal_number_stocks)
-            self.optimized_df = self.calculate_weight_expected_return(
-                self.optimized_df)
-            return
+        elif (actual_greater_than_previous_actual) & (not actual_greater_than_desired):
+             self.optimal_number_stocks = number_of_stocks
+             self.previous_highest_expected_return = actual_expected_return
+        self.optimize_expected_return(number_of_stocks - 1,threshold,actual_expected_return)
+        self.optimized_df = self.optimized_df.head(self.optimal_number_stocks)
+        self.optimized_df = self.calculate_weighted_expected_return(self.optimized_df)
+        return
 
     def top_stocks(self,df,base_metric):
         sectors = helper.get_sector()
@@ -135,7 +144,7 @@ class stock():
     def build_portfolio(self, df, selected_ticker_list, threshold, desired_return, investing_amount):
         self.metric_df = df
         self.optimized_df = df[df.Ticker.isin(selected_ticker_list)]
-        self.optimized_df = self.optimized_df[(self.optimized_df['strength'] > 0) & (self.optimized_df['roi'] > 0)  ]
+        self.optimized_df = self.optimized_df[(self.optimized_df['strength'] > 0) & (self.optimized_df['expected_annual_return'] > 0)  ]
         self.threshold = threshold
         self.desired_return = desired_return
         self.optimize_expected_return(
@@ -160,24 +169,26 @@ class stock():
             df = self.get_stock_data_by_sector_and_index('S&P 500','Any')
             if base_metric == helper.Metric.STRENGTH.value:
                 self.update_avg_metric_dic('Any')
-                df = self.calculate_strength_value(df,stock_type)
+                df = self.calculate_strength_value(self.combine_with_return_data(df),stock_type)
             elif base_metric == helper.Metric.DIVIDEND.value:
                 df = df.sort_values(by="dividend", ascending=False)
             df.to_pickle(fileName)   
         return self.top_stocks(df,base_metric)
+
+    def combine_with_return_data(self,df):
+        return_rate = bigQuery.get_annual_return()
+        combined_data = pd.merge(df, return_rate, on='Ticker', how='inner')
+        combined_data = np.round(combined_data, decimals=2)
+        return combined_data
     
     def update_strength_data(self,sector,index,stock_type,fileName):
-        combined_data = self.get_stock_data_by_sector_and_index(index,sector)
+        sector_index_data = self.get_stock_data_by_sector_and_index(index,sector)
         self.update_avg_metric_dic(sector)
         strength_calculated_df = self.calculate_strength_value(
-            combined_data,stock_type)
-        strength_calculated_df = np.round(strength_calculated_df, decimals=2)
-        strength_calculated_df.reset_index(drop=True, inplace=True)
+            self.combine_with_return_data(sector_index_data),stock_type)
         strength_calculated_df  = strength_calculated_df.fillna(0)
-        #need to think about how to cache this in the production
         strength_calculated_df.to_pickle(fileName)
-        ticker_lists = strength_calculated_df["Ticker"].to_list()
-        return ticker_lists
+        return strength_calculated_df["Ticker"].to_list()
 
     def cache_portfolio(self,expected_return_value, threshold, investing_amount,selected_ticker_lists):
         logging.info("Optimizing the stock data")
@@ -185,22 +196,6 @@ class stock():
                     expected_return_value), 100), threshold=int(threshold), investing_amount=int(investing_amount))
         portfolio = np.round(portfolio, decimals=2)
         portfolio.to_pickle(helper.get_pickle_file()["portfolio"])
-
-    def validate_input(self, selected_ticker_lists, expected_return_value, threshold, investing_amount):
-        message = ""
-        if len(selected_ticker_lists) == 0:
-            message = 'The stock list should not be null'
-        elif len(selected_ticker_lists) != len(set(selected_ticker_lists)):
-            message = 'The stocks must be unique'
-        elif threshold == '':
-            message = 'Threshold should not be blank'
-        elif len(set(selected_ticker_lists)) < int(float(threshold)):
-            message = 'The stock list must be greater than threshold'
-        elif investing_amount == '':
-            message = 'Investment Amount must not be blank'
-        elif expected_return_value == '':
-            message = 'Expected Return Value must not be blank'
-        return message
     
    
             

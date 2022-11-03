@@ -6,6 +6,13 @@ logging.basicConfig(level=logging.INFO)
 client = bigquery.Client()
 
 
+def write_to_bigquery(df,table_id):
+    # Since string columns use the "object" dtype, pass in a (partial) schema
+    # to ensure the correct BigQuery data type.
+    job_config = bigquery.LoadJobConfig(schema=[bigquery.SchemaField("Ticker", "STRING","REQUIRED"),])
+    job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
+
+
 def get_stock_data(index, sector):
     logging.info( 'Getting Stock data for Sector %s  and Index  %s ', sector, index)
     query_parameters = [bigquery.ScalarQueryParameter("index", "STRING", index),
@@ -37,6 +44,11 @@ def get_average_metric():
              """
     return run_query(query,query_parameters = [])
 
+def get_annual_return():
+    query = """
+            SELECT *  FROM `stockdataextractor.stock.annual-return` 
+             """
+    return run_query(query,query_parameters = [])
 
 def get_query(index,sector):
     query = ""
