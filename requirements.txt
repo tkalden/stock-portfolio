@@ -8,3 +8,4 @@ finvizfinance
 google-cloud-bigquery
 db-dtypes
 seaborn
+pandas_datareader
