@@ -89,9 +89,19 @@ class stock():
 
     def calculate_portfolio_value_distribution(self, investing_amount):
         self.optimized_df['invested_amount'] = np.multiply(
-        self.optimized_df['weighted_expected_return'].astype(float), float(investing_amount))
+        self.optimized_df['weight'].astype(float), float(investing_amount))
         return
 
+    def calculate_portfolio_return(self,df):
+         porfolio_return = df['weighted_expected_return']
+         porfolio_return = round(porfolio_return.sum(),3)
+         return porfolio_return*100
+    
+    def calculate_portfolio_risk(self,df):
+        portfolio_risk =  df['expected_annual_risk'].astype(float) * df['weight']
+        portfolio_risk = round(portfolio_risk.sum(),3)
+        return portfolio_risk*100
+ 
 
     def total_share(self):
         self.optimized_df['total_shares'] = np.divide(
@@ -142,9 +152,9 @@ class stock():
                 self.top_dict.append({"id": sector, "values":values, "labels":labels, "title": sector})
         return self.top_dict
 
-    def build_portfolio_from_user_input_tickers(self, df, selected_ticker_list, threshold, desired_return, investing_amount):
+    def build_portfolio_from_user_input_tickers(self, df, selected_ticker_list, threshold, desired_return, investing_amount,maximum_stock_price):
         df = df[df.Ticker.isin(selected_ticker_list)]
-        df = df[(df['strength'] > 0) & (df['expected_annual_return'] > '0')  ]
+        df = df[(df['strength'] > 0) & (df['expected_annual_return'] > '0') & (df['price'] < maximum_stock_price) ]
         self.threshold = threshold
         self.desired_return = desired_return
         self.optimized_df = df #initialize the df
@@ -159,8 +169,8 @@ class stock():
         portfolio = portfolio[helper.portfolio_attributes()]
         return portfolio
 
-    def build_portfolio_with_top_stocks(self, df, investing_amount):
-        self.optimized_df = df[(df['strength'] > 0) & (df['expected_annual_return'] > '0') ]
+    def build_portfolio_with_top_stocks(self, df, investing_amount,maximum_stock_price):
+        self.optimized_df = df[(df['strength'] > 0) & (df['expected_annual_return'] > '0') & (df['price'] < maximum_stock_price)]
         self.optimized_df = self.calculate_weighted_expected_return(self.optimized_df.head(5)) 
         return self.calculate_portfolio_value_and_share(investing_amount)
 
