@@ -44,23 +44,27 @@ def build():
     stock_data = pd.read_pickle(helper.get_pickle_file()["stock"])
     ticker_list = sorted(list(set(stock_data["Ticker"])))
     session['user_id'] = 'albertkalden@gmail.com'
+    total_portfolio_return = 0
+    total_portfolio_risk = 0
     if request.method == 'POST':
         if request.form["btn"]=="Build":
             sector = request.form.get('sector')
             index = request.form.get('index')
             stock_type = request.form.get('stock_type')
             investing_amount = request.form.get('investing_amount')
+            maximum_stock_price = request.form.get('max_stock_price')
             strength_df = stockValueExtractor.update_strength_data(sector=sector, index = index,stock_type = stock_type)
-            portfolio = stockValueExtractor.build_portfolio_with_top_stocks(strength_df,investing_amount)
+            portfolio = stockValueExtractor.build_portfolio_with_top_stocks(strength_df,investing_amount,maximum_stock_price)
         elif request.form["btn"]=="Optimize":
             app.logger.info("Extracting form data")
             threshold = request.form["threshold"]
             stock_type = request.form["stock_type"]
             investing_amount = request.form["investing_amount"]
+            maximum_stock_price = request.form.get('max_stock_price')
             expected_return_value = request.form["expected_return_value"]
             selected_ticker_list = (list(set(request.form.getlist("stock[]"))))
-            strength_df = stockValueExtractor.update_strength_data(sector = 'Any', index = 'S&P 500',stock_type = stock_type)
-            portfolio = stockValueExtractor.build_portfolio_from_user_input_tickers(strength_df,selected_ticker_list, threshold,expected_return_value, investing_amount)
+            strength_df = stockValueExtractor.update_strength_data(sector = 'Any', index = 'S&P 500',stock_type = stock_type)       
+            portfolio = stockValueExtractor.build_portfolio_from_user_input_tickers(strength_df,selected_ticker_list, threshold,expected_return_value, investing_amount,maximum_stock_price)
         elif request.form["btn"]=="Save Portfolio":
              # for some reason the portfolio varible goes to empty dataframe when the save is clicked.Following
             # is the work around
@@ -69,8 +73,11 @@ def build():
                 app.logger.info(f'Saving portfolio Data %',portfolio)
                 stockValueExtractor.save_portfolio_data(portfolio,session['user_id'])
                 stockValueExtractor.save_user_data(session['user_id'])
+        total_portfolio_return = stockValueExtractor.calculate_portfolio_return(portfolio)
+        total_portfolio_risk = stockValueExtractor.calculate_portfolio_risk(portfolio)
     stockValueExtractor.pickle_file(portfolio,'portfolio')  
-    return render_template('buildPortfolio.html',stock_types = helper.get_stock_type(),ticker_list = ticker_list,parameters=helper.get_optimization_parameters(),ticker_sector_lists=helper.index_select_attributes(),title= "Build Portfolio")
+    title = "Portfolio Return: {portfolio_return} % | Portfolio Risk: {risk} %".format(portfolio_return = total_portfolio_return, risk = total_portfolio_risk)
+    return render_template('buildPortfolio.html',stock_types = helper.get_stock_type(),ticker_list = ticker_list,parameters=helper.get_optimization_parameters(),ticker_sector_lists=helper.index_select_attributes(),title= title )
 
 @app.route('/screener/data')
 def stock_data():  

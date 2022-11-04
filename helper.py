@@ -25,7 +25,9 @@ def get_optimization_parameters():
             {"label": "expected_return_value",
              "title": "Expected Return (%)", "placeholder": "Enter Expected Return"},
             {"label": "high_risk_flag",
-             "title": "High Risk Flag (True or False)", "placeholder": "True or False"}]
+             "title": "High Risk Flag (True or False)", "placeholder": "True or False"},
+             {"label": "max_stock_price",
+             "title": "Maximum Affordable Stock Price ", "placeholder": "Enter Maximum Price"}]
 
 def get_pickle_file():
     return {"dividend":"./pickleFiles/dividendchart.pkl",
