@@ -1,14 +1,10 @@
-
-from cmath import nan
 import pandas as pd
 import numpy as np
 import helper
 import bigQuery
-import annualReturn
 import logging
-from finvizfinance.group.overview import Overview as Goverview
-from finvizfinance.group.valuation import Valuation as Gvaluation
 pd.options.mode.chained_assignment = None  # default='warn'
+import uuid
 
 logging.basicConfig(level = logging.INFO)
 
@@ -27,6 +23,10 @@ class stock():
     def get_stock_data_by_sector_and_index(self,index,sector):
         self.metric_df = bigQuery.get_stock_data(index, sector)
         self.round_decimal_place(self.metric_df,['insider_own','dividend','roi','roe'])
+        self.metric_df = self.combine_with_return_data(self.metric_df)
+        self.metric_df  = self.metric_df.replace(np.nan,0)
+        self.metric_df=self.metric_df.applymap(str)
+         #the dataTable throws invalid json if the dtype is not string. Workaround solution for now
         return self.metric_df
 
     def update_avg_metric_dic(self,sector):
@@ -46,7 +46,7 @@ class stock():
 
     def round_decimal_place(self,df,roundArray):
         for a in roundArray:
-            df[a] = np.round(df[a].astype(float), decimals = 2)
+            df[a] = np.round(df[a].astype(float), decimals = 3)
         return df
  
    # we can use return_risk_ratio as a multiplier instead of addition. There is a possibility 
@@ -74,21 +74,24 @@ class stock():
             df["strength"] = -1*df["strength"]
         else:
             raise ValueError("Stock Type must be Value or Growth")
-        df = np.round(df, decimals=2) 
-        return df.sort_values(by="strength", ascending=False)
+        df = df.replace(np.nan,0)
+        df = np.round(df, decimals=3) 
+        df = df.sort_values(by=["strength","expected_annual_return"], ascending=[False,False])
+        return df
 
     def calculate_weighted_expected_return(self, df):
         strengthArray = df["strength"]
         strengthList = list(map(float, strengthArray))
         weight_array = np.divide(strengthList, sum(strengthList))
-        df["weight"] = weight_array
-        df["weighted_expected_return"] = df["expected_annual_return"] * df["weight"]
+        df['weight'] = weight_array
+        df['weighted_expected_return'] =  df['expected_annual_return'].astype(float) * df['weight']
         return df
 
     def calculate_portfolio_value_distribution(self, investing_amount):
         self.optimized_df['invested_amount'] = np.multiply(
-            self.optimized_df['weight'], investing_amount)
-        return self.optimized_df['invested_amount']
+        self.optimized_df['weighted_expected_return'].astype(float), float(investing_amount))
+        return
+
 
     def total_share(self):
         self.optimized_df['total_shares'] = np.divide(
@@ -104,15 +107,13 @@ class stock():
     """
     def optimize_expected_return(self, number_of_stocks, threshold,desired_return):
         #we want to remove the lowest strength iteratively till we get the optimal expected return
-        if number_of_stocks < threshold:
+        if number_of_stocks < float(threshold):
             return  
-        df = self.optimized_df.sort_values(by='strength', ascending=False) 
+        df = self.optimized_df.head(number_of_stocks)
         self.calculate_weighted_expected_return(df)
-        df = df.sort_values(by='weighted_expected_return', ascending=False) 
-        df = df.head(number_of_stocks)
-        actual_return = df['weighted_expected_return'].replace(np.nan, 0).to_numpy()
-        actual_expected_return = sum(actual_return)
-        actual_greater_than_desired = actual_expected_return > desired_return
+        actual_return = df['weighted_expected_return']
+        actual_expected_return = float(actual_return.sum())
+        actual_greater_than_desired = actual_expected_return > float(desired_return)
         actual_greater_than_previous_actual = actual_expected_return > self.previous_highest_expected_return 
         if actual_greater_than_desired:
             self.optimal_number_stocks = number_of_stocks
@@ -120,9 +121,9 @@ class stock():
              self.optimal_number_stocks = number_of_stocks
              self.previous_highest_expected_return = actual_expected_return
         self.optimize_expected_return(number_of_stocks - 1,threshold,actual_expected_return)
-        self.optimized_df = self.optimized_df.head(self.optimal_number_stocks)
-        self.optimized_df = self.calculate_weighted_expected_return(self.optimized_df)
-        return
+        df = self.optimized_df.head(self.optimal_number_stocks)
+        self.optimized_df = self.calculate_weighted_expected_return(df)
+        return self.optimized_df
 
     def top_stocks(self,df,base_metric):
         sectors = helper.get_sector()
@@ -141,61 +142,99 @@ class stock():
                 self.top_dict.append({"id": sector, "values":values, "labels":labels, "title": sector})
         return self.top_dict
 
-    def build_portfolio(self, df, selected_ticker_list, threshold, desired_return, investing_amount):
-        self.metric_df = df
-        self.optimized_df = df[df.Ticker.isin(selected_ticker_list)]
-        self.optimized_df = self.optimized_df[(self.optimized_df['strength'] > 0) & (self.optimized_df['expected_annual_return'] > 0)  ]
+    def build_portfolio_from_user_input_tickers(self, df, selected_ticker_list, threshold, desired_return, investing_amount):
+        df = df[df.Ticker.isin(selected_ticker_list)]
+        df = df[(df['strength'] > 0) & (df['expected_annual_return'] > '0')  ]
         self.threshold = threshold
         self.desired_return = desired_return
-        self.optimize_expected_return(
+        self.optimized_df = df #initialize the df
+        self.optimized_df = self.optimize_expected_return(
             number_of_stocks=len(selected_ticker_list),threshold = threshold, desired_return = desired_return)
+        return self.calculate_portfolio_value_and_share(investing_amount)
+
+    def calculate_portfolio_value_and_share(self, investing_amount):
         self.calculate_portfolio_value_distribution(investing_amount)
         self.total_share()
-        return self.optimized_df
+        portfolio = np.round(self.optimized_df, decimals=3)
+        portfolio = portfolio[helper.portfolio_attributes()]
+        return portfolio
 
-    def checkFile(self,fileName):
+    def build_portfolio_with_top_stocks(self, df, investing_amount):
+        self.optimized_df = df[(df['strength'] > 0) & (df['expected_annual_return'] > '0') ]
+        self.optimized_df = self.calculate_weighted_expected_return(self.optimized_df.head(5)) 
+        return self.calculate_portfolio_value_and_share(investing_amount)
+
+    def checkFile(self,key):
      result = True
      try:
-         pd.read_pickle(fileName)
+         pd.read_pickle(helper.get_pickle_file()[key])
      except:
         result = False
      return result
     
-    def get_chart_data(self,fileName,stock_type,base_metric):
+    def get_chart_data(self,key,stock_type,base_metric,overwrite):
         df = pd.DataFrame()
-        if self.checkFile(fileName):
-            df = pd.read_pickle(fileName)
+        if self.checkFile(key) or not overwrite:
+            df = self.unpickle_file(key)
         else:
             df = self.get_stock_data_by_sector_and_index('S&P 500','Any')
             if base_metric == helper.Metric.STRENGTH.value:
                 self.update_avg_metric_dic('Any')
-                df = self.calculate_strength_value(self.combine_with_return_data(df),stock_type)
+                df = self.calculate_strength_value(df,stock_type)
             elif base_metric == helper.Metric.DIVIDEND.value:
                 df = df.sort_values(by="dividend", ascending=False)
-            df.to_pickle(fileName)   
+            self.pickle_file(df,key)  
         return self.top_stocks(df,base_metric)
 
     def combine_with_return_data(self,df):
         return_rate = bigQuery.get_annual_return()
         combined_data = pd.merge(df, return_rate, on='Ticker', how='inner')
-        combined_data = np.round(combined_data, decimals=2)
+        combined_data = np.round(combined_data, decimals=3)
         return combined_data
     
-    def update_strength_data(self,sector,index,stock_type,fileName):
+    def update_strength_data(self,sector,index,stock_type):
         sector_index_data = self.get_stock_data_by_sector_and_index(index,sector)
         self.update_avg_metric_dic(sector)
-        strength_calculated_df = self.calculate_strength_value(
-            self.combine_with_return_data(sector_index_data),stock_type)
+        strength_calculated_df = self.calculate_strength_value(sector_index_data,stock_type)
         strength_calculated_df  = strength_calculated_df.fillna(0)
-        strength_calculated_df.to_pickle(fileName)
-        return strength_calculated_df["Ticker"].to_list()
+        return strength_calculated_df
 
-    def cache_portfolio(self,expected_return_value, threshold, investing_amount,selected_ticker_lists):
-        logging.info("Optimizing the stock data")
-        portfolio = self.build_portfolio(df=pd.read_pickle(helper.get_pickle_file()["stock"]), selected_ticker_list=selected_ticker_lists, desired_return=np.divide(int(
-                    expected_return_value), 100), threshold=int(threshold), investing_amount=int(investing_amount))
-        portfolio = np.round(portfolio, decimals=2)
-        portfolio.to_pickle(helper.get_pickle_file()["portfolio"])
+    def pickle_file(self, df, key):
+        logging.info('Pickle DF')
+        return df.to_pickle(helper.get_pickle_file()[key])
+
+    def unpickle_file(self,key):
+        return pd.read_pickle(helper.get_pickle_file()[key])
+
+    def save_data(self, df, table_id):
+         return bigQuery.write_to_bigquery(df,table_id)
+
+    def save_user_data(self,user_id):
+        df = pd.DataFrame()
+        df['user_id'] = user_id
+        table_id = 'stockdataextractor.stock.user-table'
+        self.save_data(df,table_id)
+
+
+    def save_portfolio_data(self,df,user_id):
+         new_df = df.drop(['Ticker'],1)
+         new_df = new_df.apply(pd.to_numeric)
+         final_df = pd.concat([df['Ticker'],new_df], axis=1)
+         uid = uuid.uuid4()
+         portfolio_id = uid.hex
+         table_id = 'stockdataextractor.stock.portfolio-table'
+         final_df['user_id'] = user_id
+         final_df['portfolio_id'] = portfolio_id
+         self.save_data(final_df,table_id)
+
+    def get_portfolios_by_user_id(self,user_id):
+        return bigQuery.get_portfolios_by_user_id(user_id)
+   
+    def cache_stock_data(self):
+        if not self.checkFile('stock'):
+            data = self.get_stock_data_by_sector_and_index(sector = 'Any', index='S&P 500')
+            self.pickle_file(data,'stock')
+
     
    
             

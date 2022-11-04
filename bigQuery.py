@@ -7,10 +7,7 @@ client = bigquery.Client()
 
 
 def write_to_bigquery(df,table_id):
-    # Since string columns use the "object" dtype, pass in a (partial) schema
-    # to ensure the correct BigQuery data type.
-    job_config = bigquery.LoadJobConfig(schema=[bigquery.SchemaField("Ticker", "STRING","REQUIRED"),])
-    job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
+    client.load_table_from_dataframe(df, table_id)
 
 
 def get_stock_data(index, sector):
@@ -36,7 +33,23 @@ def get_average_metric_by_sector(sector):
              """
     query_parameters = [bigquery.ScalarQueryParameter("sector", "STRING", sector)]
     return run_query(query,query_parameters)
-    
+
+def get_portfolios_by_user_id(user_id):
+    query = """
+    SELECT * FROM `stockdataextractor.stock.portfolio-table` t
+    WHERE t.user_id = @user_id
+     """
+    query_parameters = [bigquery.ScalarQueryParameter("user_id", "STRING", user_id)]
+    return run_query(query,query_parameters)
+
+def get_portfolio_by_id(portfolio_id):
+    query = """
+    SELECT * FROM `stockdataextractor.stock.portfolio-table` t
+    WHERE t.portfolio_id = @portfolio_id
+     """
+    query_parameters = [bigquery.ScalarQueryParameter("portfolio_id", "STRING", portfolio_id)]
+    return run_query(query,query_parameters)
+ 
 def get_average_metric():
     query = """
             SELECT *

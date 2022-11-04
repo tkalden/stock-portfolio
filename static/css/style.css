@@ -56,7 +56,6 @@
     padding-right: 20px;
     padding-bottom: 5rem;
     min-height: 80vh;
-
 }
 
 #page-container {
@@ -71,8 +70,8 @@
 
 .pagination > li > a
 {
-    background-color: black;
-    color: white;
+    background-color:white;
+    color: black;
 }
 
 .pagination > li > a:focus,

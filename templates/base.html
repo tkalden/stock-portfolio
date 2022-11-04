@@ -29,9 +29,9 @@
                     <a href="{{ url_for('valueChart') }}" class="nav-item nav-link text-white">Top Value Stocks</a>
                     <a href="{{ url_for('growthChart') }}" class="nav-item nav-link text-white">Top Growth Stocks</a>
                     <a href="{{ url_for('dividendChart') }}" class="nav-item nav-link text-white">Top Dividend Stocks</a>
-                    <a href="#" class="nav-item nav-link text-white">Top Trading Stocks</a>
-                    <a href="{{ url_for('index') }}" class="nav-item nav-link text-white">Build Portfolio</a>
-                    <a href="{{ url_for('portfolio') }}"class="nav-item nav-link text-white">My Portfolio</a>
+                    <a href="{{ url_for('screener') }}"class="nav-item nav-link text-white">Screener</a>
+                    <a href="{{ url_for('build') }}" class="nav-item nav-link text-white">Build Portfolio</a>
+                    <a href="{{ url_for('portfolio')}}" class="nav-item nav-link text-white">My Portfolio</a>
                 </div>
                 <div class="navbar-nav ms-auto">
                     <a href="#" class="nav-item nav-link text-white">Login</a>
@@ -47,10 +47,10 @@
      <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.js"></script>
      {% block scripts %}{% endblock %}
      {{ toastr.include_toastr_js() }}
+    </div> 
     </div>
     <footer class="text-center text-lg-start navbar-dark bg-dark text-white" id="footer">
         {% include "/footer.html" %}    
     </footer>
-    </div>
 </body>
 </html>
