@@ -45,7 +45,7 @@ def build():
     ticker_list = sorted(list(set(stock_data["Ticker"])))
     session['user_id'] = 'albertkalden@gmail.com'
     if request.method == 'POST':
-        if request.form["btn"]=="Search":
+        if request.form["btn"]=="Build":
             sector = request.form.get('sector')
             index = request.form.get('index')
             stock_type = request.form.get('stock_type')
