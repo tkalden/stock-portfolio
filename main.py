@@ -77,7 +77,7 @@ def build():
         total_portfolio_risk = stockValueExtractor.calculate_portfolio_risk(portfolio)
     stockValueExtractor.pickle_file(portfolio,'portfolio')  
     title = "Portfolio Return: {portfolio_return} % | Portfolio Risk: {risk} %".format(portfolio_return = total_portfolio_return, risk = total_portfolio_risk)
-    return render_template('buildPortfolio.html',stock_types = helper.get_stock_type(),ticker_list = ticker_list,parameters=helper.get_optimization_parameters(),ticker_sector_lists=helper.index_select_attributes(),title= title )
+    return render_template('buildPortfolio.html',stock_types = helper.get_stock_type(),ticker_list = ticker_list,parameters=helper.get_optimization_parameters(),ticker_sector_lists=helper.index_select_attributes(),title= title,columns = helper.build_porfolio_column() )
 
 @app.route('/screener/data')
 def stock_data():  
@@ -91,7 +91,7 @@ def stock_data():
 @app.route('/my-portfolio', methods=["GET","POST"])
 def portfolio():
      # render the data from database
-     return render_template('portfolio.html',title= "Logged in as {user_id}".format(user_id = session["user_id"]))
+     return render_template('portfolio.html',title= "Logged in as {user_id}".format(user_id = session["user_id"]), columns = helper.build_porfolio_column())
 
 @app.route('/my-portfolio/data')
 def portfolio_data():

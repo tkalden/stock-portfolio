@@ -5,16 +5,10 @@
   <table id="data" class="table table-striped table-dark" style="width: 100%">
     <thead>
       <tr>
-        <th>Portfolio Id</th>
-        <th>Ticker</th>
-        <th>Price</th>
-        <th>Expected Return</th>
-        <th>Expected Risk</th>
-        <th>Expected Ratio</th>
-        <th>Weight</th>
-        <th>Weighted Expected Return</th>
-        <th>Total Shares</th>
-        <th>Invested Amount</th>
+        <th>Portfolio ID</th>
+        {% for column in columns %}
+        <th>{{column}}</th>
+        {% endfor %}
       </tr>
     </thead>
     <tbody>
