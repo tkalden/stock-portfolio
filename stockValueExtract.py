@@ -174,7 +174,7 @@ class stock():
     
     def get_chart_data(self,key,stock_type,base_metric,overwrite):
         df = pd.DataFrame()
-        if self.checkFile(key) or not overwrite:
+        if self.checkFile(key) and not overwrite:
             df = self.unpickle_file(key)
         else:
             df = self.get_stock_data_by_sector_and_index('S&P 500','Any')
