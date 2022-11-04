@@ -15,7 +15,16 @@ def index_sector():
     return [{"label": "index", "content": get_index(), "title": "Select Index"},
             {"label": "sector", "content": get_sector(), "title": "Select Sector"},
             ]
-
+def build_porfolio_column():
+    return ['Ticker',
+            'Price ($)',
+            'Expected Return (%)',
+            'Expected Risk (%)',
+            'Expected Ratio (%)',
+            'Weight (%)',
+            'Weighted Expected Return (%)',
+            'Total Shares',
+            'Invested Amount ($)']
 
 def get_optimization_parameters():
     return [{"label": "investing_amount",

@@ -99,7 +99,8 @@ class stock():
     
     def calculate_portfolio_risk(self,df):
         portfolio_risk =  df['expected_annual_risk'].astype(float) * df['weight']
-        portfolio_risk = round(portfolio_risk.sum(),3)
+        portfolio_risk = portfolio_risk.round(3)
+        portfolio_risk = portfolio_risk.sum()
         return portfolio_risk*100
  
 
