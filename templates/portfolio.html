@@ -27,6 +27,7 @@
   <script>
     $(document).ready(function () {
       $('#data').DataTable({
+        order: [[7, 'desc']],
         ajax: '/my-portfolio/data',
         scrollX: true,
         columns: [

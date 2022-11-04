@@ -39,6 +39,7 @@ Build Top Stock Portfolio
     $(document).ready(function () {
       $('#data').DataTable({
         ajax: '/portfolio/data',
+        order: [[6, 'desc']],
         scrollX: true,
         columns: [
           {data: 'Ticker'},
