@@ -46,11 +46,12 @@ def build():
     session['user_id'] = 'albertkalden@gmail.com'
     if request.method == 'POST':
         if request.form["btn"]=="Search":
-            session["sector"] = request.form.get('sector')
-            session["index"] = request.form.get('index')
-            session["stock_type"] = request.form.get('stock_type')
-            strength_df = stockValueExtractor.update_strength_data(sector=session["sector"], index =session["index"],stock_type = session["stock_type"])
-            portfolio = stockValueExtractor.build_portfolio_with_top_stocks(strength_df,100000)
+            sector = request.form.get('sector')
+            index = request.form.get('index')
+            stock_type = request.form.get('stock_type')
+            investing_amount = request.form.get('investing_amount')
+            strength_df = stockValueExtractor.update_strength_data(sector=sector, index = index,stock_type = stock_type)
+            portfolio = stockValueExtractor.build_portfolio_with_top_stocks(strength_df,investing_amount)
         elif request.form["btn"]=="Optimize":
             app.logger.info("Extracting form data")
             threshold = request.form["threshold"]
