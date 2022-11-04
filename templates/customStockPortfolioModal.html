@@ -1,25 +1,31 @@
 <!-- Modal -->
     <!-- Modal HTML Markup -->
-    <div id="optmizePortfolio" class="modal fade" role="dialog">
+    <div id="buildCustomizedPortfolio" class="modal fade" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content bg-dark">
                 <div class="modal-body">
                     <form id="portfolioForm" role="form" method="POST" action="">
                     <h5 class = "text-white">Choose Stocks</h5>
                      <div class="form-group row g-3">
-                        {% for stock in stocks %}
-                        <div class="cnt col" id = "{{stock['label']}}">
-                          <select id = "stock[]" name="stock[]" required>
-                            {% for e in stock['ticker_list']  %}
-                               {%if e == None%}
-                               <option class = "text-black" value="" >{{ e }}</option>
-                               {% endif %}
-                                <option value="{{ e }}" >{{ e }}</option>
+                        {% for i in range(8) %}
+                        <div class="cnt col">
+                          <select id = "selectStock" value = "Select Ticker" id = "stock-{{i}}" name="stock[]">
+                            <option value="">None</option>
+                            {% for e in ticker_list %}
+                                <option value="{{ e }}">{{ e }}</option>
                             {% endfor %}
                             </select>
                         </div>
                         {% endfor %}
                       </div>
+                        <div class="form-group">
+                          <h5 class = "text-white">Choose Stock Type</h5>
+                          <select name="stock_type" required>
+                              {% for ts in stock_types %}                                   
+                               <option value="{{ ts }}" selected>{{ ts }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     <h5 class = "text-white">Choose Optimization Parameters</h5>
                       <div class="form-group">
                         {% for parameter in parameters %}
@@ -35,7 +41,7 @@
                         </div>
                         <br>
                         <div>
-                        <input type="submit" name="btn" class = "bg-light text-dark" value="Optimize" >
+                        <input type="submit" name="btn" class = "bg-light text-dark" value="Optimize"/>
                         <input type="button" data-bs-dismiss="modal" class = "bg-light text-dark" value="Close"/>
                        </div>
                       </form>
@@ -43,3 +49,16 @@
             </div><!-- /.modal-content -->
         </div><!-- /.modal-dialog -->
       </div><!-- /.modal -->
+<!--       <script type="text/javascript">	
+       $("#selectStock").click(function(e){
+            var flag = 0;
+            $(".optimizeButton").each(function(){
+            if($(this).val() != ""){
+                    flag = 1;
+            }
+            });
+            if(flag != 1){
+            alert("Select an option");
+            }
+        })
+        </script> -->

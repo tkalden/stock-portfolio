@@ -1,0 +1,22 @@
+<!-- Modal -->
+    <!-- Modal HTML Markup -->
+<div id="buildTopStockPortfolio" class="modal fade" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content bg-dark">
+            <div class="modal-body">
+            <form id="portfolioForm" role="form" method="POST" action="">
+                <div class="form-group row g-3">
+                {% for ts in ticker_sector_lists %}
+                <label class = "text-white" for ="{{ts['label']}}"> {{ts['title']}} </label>
+                    <select class="form-select w-25"  name="{{ts['label']}}">
+                        {% for e in ts['content']  %}
+                            <option value="{{ e }}" selected>{{ e }}</option>
+                        {% endfor %}
+                    </select>
+                {% endfor %}
+                </div>
+                <input type="submit" name="btn" class = "bg-light text-dark" value="Search" >
+            </form>    
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+    </div><!-- /.modal --> 

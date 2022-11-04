@@ -1,11 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3> Portfolio </h3>
 <div class = "table-responsive">
   <table id="data" class="table table-striped table-dark" style="width: 100%">
     <thead>
       <tr>
-        <th>Portfolio Id</th>
         <th>Ticker</th>
         <th>Price</th>
         <th>Expected Return</th>
@@ -21,17 +19,29 @@
     </tbody>
   </table>
 </div>
+<div>
+<button type="button"  data-toggle="modal" data-bs-toggle="modal" data-bs-target="#buildCustomizedPortfolio">
+Build Your Own Portfolio
+</button>
+{% include "/customStockPortfolioModal.html" %}  
+<button type="button"  data-toggle="modal" data-bs-toggle="modal" data-bs-target="#buildTopStockPortfolio">
+Build Top Stock Portfolio
+</button>
+{% include "/topStockPortfolioModal.html" %} 
+</div>
+<form id="savePortfolio" role="form" method="POST">
+<input type="submit" name="btn" class = "bg-light text-dark" value="Save Portfolio" >
+</form>
 {% endblock %}
 
 {% block scripts %}
   <script>
     $(document).ready(function () {
       $('#data').DataTable({
-        order: [[7, 'desc']],
-        ajax: '/my-portfolio/data',
+        ajax: '/portfolio/data',
+        order: [[6, 'desc']],
         scrollX: true,
         columns: [
-          {data: 'portfolio_id', searchable: false},
           {data: 'Ticker'},
           {data: 'price', searchable: false},
           {data: 'expected_annual_return',searchable: false},

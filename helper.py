@@ -1,34 +1,19 @@
 from enum import Enum
 
 
-def get_stock_dict(ticker_list,size):
-    with_none_ticker_list = [None]
-    with_none_ticker_list.extend(ticker_list)
-    total_list =  [{"label": "stock", "title": "Stock1", "ticker_list": with_none_ticker_list},
-            {"label": "stock", "title": "Stock2",
-                "ticker_list": with_none_ticker_list},
-            {"label": "stock", "title": "Stock3",
-                "ticker_list": with_none_ticker_list},
-            {"label": "stock", "title": "Stock4",
-                "ticker_list": with_none_ticker_list},
-            {"label": "stock", "title": "Stock5",
-                "ticker_list": with_none_ticker_list},
-            {"label": "stock", "title": "Stock6",
-                "ticker_list": with_none_ticker_list},
-            {"label": "stock", "title": "Stock7",
-                "ticker_list": with_none_ticker_list},
-            {"label": "stock", "title": "Stock8",
-                "ticker_list": with_none_ticker_list}]
-    if size < 10 :
-        return total_list[0:size]
-    else :
-         return total_list
+def get_stock_dict(ticker_list):
+    return {"label": "stock", "title": "Stock1", "ticker_list": ticker_list}
 
 def index_select_attributes():
     return [{"label": "index", "content": get_index(), "title": "Select Index"},
             {"label": "sector", "content": get_sector(), "title": "Select Sector"},
             {"label": "stock_type", "content": get_stock_type(),
              "title": "Select Stock Type"}
+            ]
+
+def index_sector():
+    return [{"label": "index", "content": get_index(), "title": "Select Index"},
+            {"label": "sector", "content": get_sector(), "title": "Select Sector"},
             ]
 
 
@@ -46,8 +31,9 @@ def get_pickle_file():
     return {"dividend":"./pickleFiles/dividendchart.pkl",
             "value":"./pickleFiles/valuechart.pkl",
             "growth":"./pickleFiles/growthchart.pkl",
-             "stock":"./pickleFiles/stock.pkl",
-            "portfolio":"./pickleFiles/portfolio.pkl",
+            "stock":"./pickleFiles/stock.pkl",
+            "screener":"./pickleFiles/screener.pkl",
+            "portfolio":"./pickleFiles/portfolio.pkl"
         }
 
 def get_sector():
@@ -76,7 +62,7 @@ def get_gvaluation_metric():
     return ['Name','P/E', 'Fwd P/E', 'PEG', 'P/B', 'P/C']
 
 def portfolio_attributes():
-    return ['Ticker','price', 'expected_return', 'weight', 'total_shares', 'invested_amount']
+    return ['Ticker','price', 'expected_annual_return', 'weight','expected_annual_risk', 'return_risk_ratio', 'total_shares', 'invested_amount','weighted_expected_return']
 
 class IndexType(Enum):
     SP500 = 'S&P 500'
