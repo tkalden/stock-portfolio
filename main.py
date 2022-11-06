@@ -27,6 +27,7 @@ def home():
 
 @app.route('/login', methods=['POST','GET'])
 def login():
+   #session['user_id'] = 'albertkalden@gmail.com'
    return 'LOGIN COMING SOON'
 
 @app.route('/screener', methods=["GET","POST"])
@@ -44,10 +45,12 @@ def screener():
 
 @app.route('/portfolio', methods=["GET","POST"])
 def build():
+    user_id = ''
+    if session.get('user_id') is not None:
+         user_id = session['user_id']
     portfolio = pd.DataFrame()
     stock_data = pd.read_pickle(helper.get_pickle_file()["stock"])
     ticker_list = sorted(list(set(stock_data["Ticker"])))
-    session['user_id'] = 'albertkalden@gmail.com'
     total_portfolio_return = 0
     total_portfolio_risk = 0
     if request.method == 'POST':
@@ -81,7 +84,7 @@ def build():
         total_portfolio_risk = stockValueExtractor.calculate_portfolio_risk(portfolio)
     stockValueExtractor.pickle_file(portfolio,'portfolio')  
     title = "Portfolio Return: {portfolio_return} % | Portfolio Risk: {risk} %".format(portfolio_return = total_portfolio_return, risk = total_portfolio_risk)
-    return render_template('buildPortfolio.html',stock_types = helper.get_stock_type(),ticker_list = ticker_list,parameters=helper.get_optimization_parameters(),ticker_sector_lists=helper.index_select_attributes(),title= title,columns = helper.build_porfolio_column() )
+    return render_template('buildPortfolio.html',stock_types = helper.get_stock_type(),ticker_list = ticker_list,parameters=helper.get_optimization_parameters(),ticker_sector_lists=helper.index_select_attributes(),title= title,columns = helper.build_porfolio_column(), user_id = user_id)
 
 @app.route('/screener/data')
 def stock_data():  
