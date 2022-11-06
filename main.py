@@ -25,6 +25,10 @@ def home():
    stockValueExtractor.cache_stock_data()
    return render_template('home.html', title= "Welcome StockNity Members!")
 
+@app.route('/login', methods=['POST','GET'])
+def login():
+   return 'LOGIN COMING SOON'
+
 @app.route('/screener', methods=["GET","POST"])
 def screener():
  index = 'S&P 500'
@@ -90,8 +94,10 @@ def stock_data():
 
 @app.route('/my-portfolio', methods=["GET","POST"])
 def portfolio():
-     # render the data from database
-     return render_template('portfolio.html',title= "Logged in as {user_id}".format(user_id = session["user_id"]), columns = helper.build_porfolio_column())
+    user_id = ''
+    if session.get('user_id') is not None:
+         user_id = session['user_id']
+    return render_template('portfolio.html',user_id = user_id, columns = helper.build_porfolio_column())
 
 @app.route('/my-portfolio/data')
 def portfolio_data():
