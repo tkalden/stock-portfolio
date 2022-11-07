@@ -24,6 +24,7 @@ class stock():
         self.metric_df = bigQuery.get_stock_data(index, sector)
         self.round_decimal_place(self.metric_df,['insider_own','dividend','roi','roe'])
         self.metric_df = self.combine_with_return_data(self.metric_df)
+        self.metric_df = self.metric_df.drop_duplicates()
         self.metric_df  = self.metric_df.replace(np.nan,0)
         self.metric_df=self.metric_df.applymap(str)
          #the dataTable throws invalid json if the dtype is not string. Workaround solution for now
@@ -187,6 +188,7 @@ class stock():
         df = pd.DataFrame()
         if self.checkFile(key) and not overwrite:
             df = self.unpickle_file(key)
+            print('here')
         else:
             df = self.get_stock_data_by_sector_and_index('S&P 500','Any')
             if base_metric == helper.Metric.STRENGTH.value:
@@ -195,6 +197,7 @@ class stock():
             elif base_metric == helper.Metric.DIVIDEND.value:
                 df = df.sort_values(by="dividend", ascending=False)
             self.pickle_file(df,key)  
+        print(df)
         return self.top_stocks(df,base_metric)
 
     def combine_with_return_data(self,df):
