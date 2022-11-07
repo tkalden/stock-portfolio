@@ -220,13 +220,6 @@ class stock():
     def save_data(self, df, table_id):
          return bigQuery.write_to_bigquery(df,table_id)
 
-    def save_user_data(self,user_id):
-        df = pd.DataFrame()
-        df['user_id'] = user_id
-        table_id = 'stockdataextractor.stock.user-table'
-        self.save_data(df,table_id)
-
-
     def save_portfolio_data(self,df,user_id):
          new_df = df.drop(['Ticker'],1)
          new_df = new_df.apply(pd.to_numeric)
