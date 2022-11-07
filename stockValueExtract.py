@@ -188,7 +188,6 @@ class stock():
         df = pd.DataFrame()
         if self.checkFile(key) and not overwrite:
             df = self.unpickle_file(key)
-            print('here')
         else:
             df = self.get_stock_data_by_sector_and_index('S&P 500','Any')
             if base_metric == helper.Metric.STRENGTH.value:
@@ -197,7 +196,6 @@ class stock():
             elif base_metric == helper.Metric.DIVIDEND.value:
                 df = df.sort_values(by="dividend", ascending=False)
             self.pickle_file(df,key)  
-        print(df)
         return self.top_stocks(df,base_metric)
 
     def combine_with_return_data(self,df):
