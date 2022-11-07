@@ -24,6 +24,7 @@ class stock():
         self.metric_df = bigQuery.get_stock_data(index, sector)
         self.round_decimal_place(self.metric_df,['insider_own','dividend','roi','roe'])
         self.metric_df = self.combine_with_return_data(self.metric_df)
+        self.metric_df = self.metric_df.drop_duplicates()
         self.metric_df  = self.metric_df.replace(np.nan,0)
         self.metric_df=self.metric_df.applymap(str)
          #the dataTable throws invalid json if the dtype is not string. Workaround solution for now
