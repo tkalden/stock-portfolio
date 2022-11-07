@@ -4,7 +4,7 @@ import helper
 from flask import render_template, request
 import pandas as pd
 from __init__ import create_app
-from flask_login import current_user
+from flask_login import current_user,login_required
 import logging
 
 main = Blueprint('main', __name__)
@@ -18,6 +18,7 @@ def home():
    return render_template('home.html')
 
 @main.route('/profile', methods=['POST','GET'])
+@login_required
 def profile():
    stockValueExtractor.cache_stock_data()
    return render_template('profile.html',name = current_user.name)
@@ -36,6 +37,7 @@ def screener():
  )
 
 @main.route('/portfolio', methods=["GET","POST"])
+@login_required
 def build():
     portfolio = pd.DataFrame()
     stock_data = pd.read_pickle(helper.get_pickle_file()["stock"])
@@ -73,6 +75,7 @@ def stock_data():
     return {'data': data}
 
 @main.route('/my-portfolio', methods=["GET","POST"])
+@login_required
 def portfolio():
     return render_template('portfolio.html', columns = helper.build_porfolio_column())
 
