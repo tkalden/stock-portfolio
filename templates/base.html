@@ -14,32 +14,27 @@
     <script src="https://kit.fontawesome.com/0000000000.js" crossorigin="anonymous"></script>
     {{ toastr.include_jquery() }}
     {{ toastr.include_toastr_css() }}
+    {{ toastr.message() }}
 </head>
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark text-white">
         <div class="container-fluid">
-            <a href="{{ url_for('main.home') }}" class="navbar-brand">Stocknity</a>
+            <a href="{{ url_for('home') }}" class="navbar-brand">Stocknity</a>
             <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <div class="navbar-nav">
-                    <a href="{{ url_for('main.valueChart') }}" class="nav-item nav-link text-white">Top Value Stocks</a>
-                    <a href="{{ url_for('main.growthChart') }}" class="nav-item nav-link text-white">Top Growth Stocks</a>
-                    <a href="{{ url_for('main.dividendChart') }}" class="nav-item nav-link text-white">Top Dividend Stocks</a>
-                    <a href="{{ url_for('main.screener') }}"class="nav-item nav-link text-white">Screener</a>
-                    <a href="{{ url_for('main.build') }}" class="nav-item nav-link text-white">Build Portfolio</a>
-                    <a href="{{ url_for('main.portfolio')}}" class="nav-item nav-link text-white">My Portfolio</a>
+                    <a href="{{ url_for('valueChart') }}" class="nav-item nav-link text-white">Top Value Stocks</a>
+                    <a href="{{ url_for('growthChart') }}" class="nav-item nav-link text-white">Top Growth Stocks</a>
+                    <a href="{{ url_for('dividendChart') }}" class="nav-item nav-link text-white">Top Dividend Stocks</a>
+                    <a href="{{ url_for('screener') }}"class="nav-item nav-link text-white">Screener</a>
+                    <a href="{{ url_for('build') }}" class="nav-item nav-link text-white">Build Portfolio</a>
+                    <a href="{{ url_for('portfolio')}}" class="nav-item nav-link text-white">My Portfolio</a>
                 </div>
                 <div class="navbar-nav ms-auto">
-                    <a href="{{ url_for('auth.login')}}" class="nav-item nav-link text-white">Login</a>
-                    <a href="{{ url_for('auth.signup') }}" class="nav-item nav-link text-white">
-                        Sign Up
-                    </a>
-                    <a href="{{ url_for('auth.logout') }}" class="nav-item nav-link text-white">
-                        Logout
-                    </a>
+                    <a href="{{ url_for('login')}}" class="nav-item nav-link text-white">Login</a>
                 </div>
             </div>
         </div>
@@ -47,7 +42,6 @@
     <div id="page-container">
     <div class="body-content">
     <h4>{{ title }}</h4>
-    {{ toastr.message() }}
      {% block content %} {% endblock %}
      <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
      <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.js"></script>
