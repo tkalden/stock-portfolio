@@ -156,7 +156,7 @@ class stock():
 
     def build_portfolio_from_user_input_tickers(self, df, selected_ticker_list, threshold, desired_return, investing_amount,maximum_stock_price):
         df = df[df.Ticker.isin(selected_ticker_list)]
-        df = df[(df['strength'] > 0) & (df['expected_annual_return'] > '0') & (df['price'] < maximum_stock_price) ]
+        df = df[(df['strength'] > 0) & (df['expected_annual_return'].astype(float) > 0) & (df['price'].astype(float) < float(maximum_stock_price)) ]
         self.threshold = threshold
         self.desired_return = desired_return
         self.optimized_df = df #initialize the df
@@ -171,8 +171,8 @@ class stock():
         portfolio = portfolio[helper.portfolio_attributes()]
         return portfolio
 
-    def build_portfolio_with_top_stocks(self, df, investing_amount,maximum_stock_price):
-        self.optimized_df = df[(df['strength'] > 0) & (df['expected_annual_return'] > '0') & (df['price'] < maximum_stock_price)]
+    def build_portfolio_with_top_stocks(self, df, investing_amount,maximum_stock_price):   
+        self.optimized_df = df[(df['strength'] > 0) & (df['expected_annual_return'].astype(float) > 0) & (df['price'].astype(float) < float(maximum_stock_price))]
         self.optimized_df = self.calculate_weighted_expected_return(self.optimized_df.head(5)) 
         return self.calculate_portfolio_value_and_share(investing_amount)
 
