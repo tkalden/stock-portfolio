@@ -78,11 +78,12 @@ def stock_data():
 @main.route('/my-portfolio', methods=["GET","POST"])
 @login_required
 def portfolio():
-    return render_template('portfolio.html', columns = helper.build_porfolio_column())
+    porfolio = stockValueExtractor.get_portfolios_by_user_id(current_user.id)
+    return render_template('portfolio.html', columns = helper.build_porfolio_column(), total_porfolios = len(porfolio) - 1)
 
 @main.route('/my-portfolio/data')
 def portfolio_data():
-    return {'data': stockValueExtractor.get_portfolios_by_user_id(current_user.id).to_dict('records')}
+    return {'data': stockValueExtractor.get_porfolio()}
 
 @main.route('/portfolio/data')
 def build_portfolio_data():
