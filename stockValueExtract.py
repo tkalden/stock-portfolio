@@ -19,6 +19,7 @@ class stock():
         self.previous_highest_expected_return = 0
         self.threshold = 0
         self.desired_return = 0
+        self.portfolio = []
     
     def get_stock_data_by_sector_and_index(self,index,sector):
         self.metric_df = bigQuery.get_stock_data(index, sector)
@@ -182,9 +183,9 @@ class stock():
         if risk_tolerance == helper.RiskEnum.HIGH.value:
             df = df[df['expected_annual_risk'].astype(float) > .7]
         elif risk_tolerance == helper.RiskEnum.MEDIUM.value:
-            df = df[(df['expected_annual_risk'].astype(float) > .4) &(df['expected_annual_risk'].astype(float) > .6)]
+            df = df[(df['expected_annual_risk'].astype(float) > .4) &(df['expected_annual_risk'].astype(float) < .6)]
         elif risk_tolerance == helper.RiskEnum.LOW.value:
-            df = df[(df['expected_annual_risk'].astype(float) > .15) &(df['expected_annual_risk'].astype(float) > .4)]
+            df = df[(df['expected_annual_risk'].astype(float) > .15) &(df['expected_annual_risk'].astype(float) < .4)]
         return df
 
     def checkFile(self,key):
@@ -244,8 +245,18 @@ class stock():
          self.save_data(final_df,table_id)
 
     def get_portfolios_by_user_id(self,user_id):
-        return bigQuery.get_portfolios_by_user_id(user_id)
-   
+        df = bigQuery.get_portfolios_by_user_id(user_id)
+        df_tuple = dict(tuple(df.groupby('portfolio_id')))
+        res = [df_tuple[key].to_dict('records') for key in df_tuple.keys()]
+        self.portfolio = res
+        return res
+
+    def get_porfolio_count(self):
+        return self.porfolio_count
+    
+    def get_porfolio(self):
+        return self.portfolio
+
     def cache_stock_data(self):
         if not self.checkFile('stock'):
             data = self.get_stock_data_by_sector_and_index(sector = 'Any', index='S&P 500')
