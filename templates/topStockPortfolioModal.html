@@ -14,12 +14,18 @@
                         {% endfor %}
                     </select>
                 {% endfor %}
+                <label class = "text-white" for = "risk_tolerance">Risk Tolerance</label>
+                    <select name="risk_tolerance" required>
+                    {% for risk in risks %}                                   
+                        <option value="{{ risk }}" selected>{{ risk }}</option>
+                        {% endfor %}
+                    </select>
                 <label class = "text-white" for = "investing_amount">Investment Amount</label>
                 <input 
                 id = "investing_amount"
                 type="text" 
                 name="investing_amount"
-                placeholder= "Amount"
+                placeholder= "Investement Amount"
                 required></input>
                 <label class = "text-white" for = "maximum_stock_price">Maximum Affordable Stock Price</label>
                 <input 

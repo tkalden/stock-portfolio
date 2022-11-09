@@ -1,7 +1,7 @@
 from flask import Blueprint
 import stockValueExtract
 import helper
-from flask import render_template, request
+from flask import render_template, request,flash
 import pandas as pd
 from __init__ import create_app
 from flask_login import current_user,login_required
@@ -47,11 +47,11 @@ def build():
     if request.method == 'POST':
         if request.form["btn"]=="Build":
             strength_df = stockValueExtractor.update_strength_data(sector=request.form.get('sector'), index = request.form.get('index'),stock_type = request.form.get('stock_type'))
-            portfolio = stockValueExtractor.build_portfolio_with_top_stocks(strength_df,request.form.get('investing_amount'),request.form.get('max_stock_price'))
+            portfolio = stockValueExtractor.build_portfolio_with_top_stocks(strength_df,request.form.get('investing_amount'),request.form.get('max_stock_price'),request.form.get('risk_tolerance'))
         elif request.form["btn"]=="Optimize":
             logging.info("Extracting form data")
             strength_df = stockValueExtractor.update_strength_data(sector = 'Any', index = 'S&P 500',stock_type = request.form["stock_type"])       
-            portfolio = stockValueExtractor.build_portfolio_from_user_input_tickers(strength_df,(list(set(request.form.getlist("stock[]")))), request.form["threshold"],request.form["expected_return_value"], request.form["investing_amount"],request.form.get('max_stock_price'))
+            portfolio = stockValueExtractor.build_portfolio_from_user_input_tickers(strength_df,(list(set(request.form.getlist("stock[]")))),request.form["expected_return_value"], request.form["investing_amount"],request.form.get('risk_tolerance'))
         elif request.form["btn"]=="Save Portfolio":
              # for some reason the portfolio varible goes to empty dataframe when the save is clicked.Following
             # is the work around
@@ -59,11 +59,12 @@ def build():
              if not portfolio.empty:
                 app.logger.info(f'Saving portfolio Data %',portfolio)
                 stockValueExtractor.save_portfolio_data(portfolio,current_user.id)
+                flash('Successfully Saved Porfolio')
         total_portfolio_return = round(stockValueExtractor.calculate_portfolio_return(portfolio),2)
         total_portfolio_risk = round(stockValueExtractor.calculate_portfolio_risk(portfolio),2)
     stockValueExtractor.pickle_file(portfolio,'portfolio')  
     title = "Portfolio Return: {portfolio_return} % | Portfolio Risk: {risk} %".format(portfolio_return = total_portfolio_return, risk = total_portfolio_risk)
-    return render_template('buildPortfolio.html',stock_types = helper.get_stock_type(),ticker_list = ticker_list,parameters=helper.get_optimization_parameters(),ticker_sector_lists=helper.index_select_attributes(),title= title,columns = helper.build_porfolio_column())
+    return render_template('buildPortfolio.html',stock_types = helper.get_stock_type(),ticker_list = ticker_list,parameters=helper.get_optimization_parameters(),ticker_sector_lists=helper.index_select_attributes(),title= title,columns = helper.build_porfolio_column(),risks = helper.risk())
 
 @main.route('/screener/data')
 def stock_data():  

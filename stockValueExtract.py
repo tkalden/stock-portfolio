@@ -154,14 +154,15 @@ class stock():
                 self.top_dict.append({"id": sector, "values":values, "labels":labels, "title": sector})
         return self.top_dict
 
-    def build_portfolio_from_user_input_tickers(self, df, selected_ticker_list, threshold, desired_return, investing_amount,maximum_stock_price):
+    def build_portfolio_from_user_input_tickers(self, df, selected_ticker_list, desired_return, investing_amount,risk_tolerance):
         df = df[df.Ticker.isin(selected_ticker_list)]
-        df = df[(df['strength'] > 0) & (df['expected_annual_return'].astype(float) > 0) & (df['price'].astype(float) < float(maximum_stock_price)) ]
-        self.threshold = threshold
+        df = df[(df['strength'] > 0) & (df['expected_annual_return'].astype(float) > 0)]
+        df = self.get_risk_tolerance_data(risk_tolerance,df)
+        self.threshold = len(selected_ticker_list)
         self.desired_return = desired_return
         self.optimized_df = df #initialize the df
         self.optimized_df = self.optimize_expected_return(
-            number_of_stocks=len(selected_ticker_list),threshold = threshold, desired_return = desired_return)
+            number_of_stocks=len(selected_ticker_list),threshold = len(selected_ticker_list), desired_return = desired_return)
         return self.calculate_portfolio_value_and_share(investing_amount)
 
     def calculate_portfolio_value_and_share(self, investing_amount):
@@ -171,10 +172,20 @@ class stock():
         portfolio = portfolio[helper.portfolio_attributes()]
         return portfolio
 
-    def build_portfolio_with_top_stocks(self, df, investing_amount,maximum_stock_price):   
+    def build_portfolio_with_top_stocks(self, df, investing_amount,maximum_stock_price,risk_tolerance):  
         self.optimized_df = df[(df['strength'] > 0) & (df['expected_annual_return'].astype(float) > 0) & (df['price'].astype(float) < float(maximum_stock_price))]
+        self.optimized_df = self.get_risk_tolerance_data(risk_tolerance,self.optimized_df)
         self.optimized_df = self.calculate_weighted_expected_return(self.optimized_df.head(5)) 
         return self.calculate_portfolio_value_and_share(investing_amount)
+    
+    def get_risk_tolerance_data(self,risk_tolerance,df):
+        if risk_tolerance == helper.RiskEnum.HIGH.value:
+            df = df[df['expected_annual_risk'].astype(float) > .7]
+        elif risk_tolerance == helper.RiskEnum.MEDIUM.value:
+            df = df[(df['expected_annual_risk'].astype(float) > .4) &(df['expected_annual_risk'].astype(float) > .6)]
+        elif risk_tolerance == helper.RiskEnum.LOW.value:
+            df = df[(df['expected_annual_risk'].astype(float) > .15) &(df['expected_annual_risk'].astype(float) > .4)]
+        return df
 
     def checkFile(self,key):
      result = True

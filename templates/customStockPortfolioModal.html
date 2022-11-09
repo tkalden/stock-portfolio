@@ -5,8 +5,8 @@
             <div class="modal-content bg-dark">
                 <div class="modal-body">
                     <form id="portfolioForm" role="form" method="POST" action="">
-                    <h5 class = "text-white">Choose Stocks</h5>
-                     <div class="form-group row g-3">
+                        <label class = "text-white" for = "selectStock">Select Ticker</label>
+                        <div class="form-group row g-3">
                         {% for i in range(8) %}
                         <div class="cnt col">
                           <select id = "selectStock" value = "Select Ticker" id = "stock-{{i}}" name="stock[]">
@@ -19,14 +19,21 @@
                         {% endfor %}
                       </div>
                         <div class="form-group">
-                          <h5 class = "text-white">Choose Stock Type</h5>
-                          <select name="stock_type" required>
+                            <label class = "text-white" for = "stock_type">Stock Type</label>
+                            <select name="stock_type" required>
                               {% for ts in stock_types %}                                   
                                <option value="{{ ts }}" selected>{{ ts }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                    <h5 class = "text-white">Choose Optimization Parameters</h5>
+                        <div class="form-group">
+                            <label class = "text-white" for = "risk_tolerance">Risk Tolerance</label>
+                            <select name="risk_tolerance" required>
+                                {% for risk in risks %}                                   
+                                 <option value="{{ risk }}" selected>{{ risk }}</option>
+                                  {% endfor %}
+                              </select>
+                        </div>
                       <div class="form-group">
                         {% for parameter in parameters %}
                             <label class = "text-white" for = "{{ parameter['label'] }}">{{ parameter['title'] }}</label>

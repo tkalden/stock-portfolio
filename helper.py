@@ -29,14 +29,8 @@ def build_porfolio_column():
 def get_optimization_parameters():
     return [{"label": "investing_amount",
              "title": "Investing Amount ($)", "placeholder": "Amount to Invest"},
-            {"label": "threshold", "title": "Threshold",
-             "placeholder": "Min. number of Stocks"},
             {"label": "expected_return_value",
-             "title": "Expected Return (%)", "placeholder": "Enter Expected Return"},
-            {"label": "high_risk_flag",
-             "title": "High Risk Flag (True or False)", "placeholder": "True or False"},
-             {"label": "max_stock_price",
-             "title": "Maximum Affordable Stock Price ", "placeholder": "Enter Maximum Price"}]
+             "title": "Expected Return (%)", "placeholder": "Enter Expected Return"}]
 
 def get_pickle_file():
     return {"dividend":"./pickleFiles/dividendchart.pkl",
@@ -75,6 +69,9 @@ def get_gvaluation_metric():
 def portfolio_attributes():
     return ['Ticker','price', 'expected_annual_return', 'weight','expected_annual_risk', 'return_risk_ratio', 'total_shares', 'invested_amount','weighted_expected_return']
 
+def risk():
+    return ['High', 'Medium', 'Low']
+
 class IndexType(Enum):
     SP500 = 'S&P 500'
     DJIA = 'DJIA'
@@ -83,6 +80,11 @@ class StockType(Enum):
     VALUE = 'Value'
     GROWTH = 'Growth'
     NONE = ''
+
+class RiskEnum(Enum):
+    LOW = 'Low'
+    MEDIUM = 'Medium'
+    HIGH = 'High'
 
 class Metric(Enum):
     STRENGTH = 'Strength'
@@ -107,3 +109,5 @@ class FunctionEnum(Enum):
     FINANCIAL = 'financial'
     G_OVERVIEW = 'gOverview'
     G_VALUATION = 'gValuation'
+
+
