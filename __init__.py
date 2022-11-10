@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_toastr import Toastr
 from flask_login import LoginManager
-from model import User 
+from utilities.model import User 
 
 
 def create_app():

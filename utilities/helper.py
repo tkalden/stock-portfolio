@@ -1,5 +1,5 @@
-from enum import Enum
-
+import numpy as np
+import enums.enum as enum
 
 def get_stock_dict(ticker_list):
     return {"label": "stock", "title": "Stock1", "ticker_list": ticker_list}
@@ -54,7 +54,7 @@ def get_exchange():
 
 
 def get_stock_type():
-    return [StockType.VALUE.value, StockType.GROWTH.value]
+    return [enum.StockType.VALUE.value, enum.StockType.GROWTH.value]
 
 # convert to dictionary
 def get_valuation_metric():
@@ -72,42 +72,12 @@ def portfolio_attributes():
 def risk():
     return ['High', 'Medium', 'Low']
 
-class IndexType(Enum):
-    SP500 = 'S&P 500'
-    DJIA = 'DJIA'
 
-class StockType(Enum):
-    VALUE = 'Value'
-    GROWTH = 'Growth'
-    NONE = ''
-
-class RiskEnum(Enum):
-    LOW = 'Low'
-    MEDIUM = 'Medium'
-    HIGH = 'High'
-
-class Metric(Enum):
-    STRENGTH = 'Strength'
-    DIVIDEND = 'Dividend'
+def round_decimal_place(df,roundArray):
+        for a in roundArray:
+            df[a] = np.round(df[a].astype(float), decimals = 3)
+        return df
 
 
-class PEFilter(Enum):
-    HIGH = 'Over 25'
-    LOW = 'Under 25'
-
-class ErrorCode(Enum):
-    INVALID_PAGE = "01"
-    TOO_MANY_REQUEST = "02"
-    OTHERS = "03"
-
-
-class FunctionEnum(Enum):
-    VALUATION = 'fvaluation'
-    OWNERSHIP = 'fownership'
-    TECHNICAL = 'ftechnical'
-    PERFORMANCE = 'fperformance'
-    FINANCIAL = 'financial'
-    G_OVERVIEW = 'gOverview'
-    G_VALUATION = 'gValuation'
 
 

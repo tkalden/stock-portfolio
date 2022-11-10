@@ -1,5 +1,5 @@
 import logging
-import bigQuery
+import utilities.bigQuery as bigQuery
 import uuid
 
 logging.basicConfig(level = logging.INFO)
