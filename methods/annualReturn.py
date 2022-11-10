@@ -2,7 +2,7 @@ from pandas_datareader import data
 import pandas as pd
 import math
 import asyncio
-import bigQuery
+import utilities.bigQuery as bigQuery
 import logging
 logger_format = '%(asctime)s:%(threadName)s:%(message)s'
 logging.basicConfig(format=logger_format, level=logging.INFO, datefmt="%H:%M:%S")

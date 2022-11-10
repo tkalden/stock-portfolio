@@ -1,6 +1,6 @@
 from flask_login import UserMixin
 from typing import Dict, Optional
-from userFunction import UserCRUD
+from utilities.userFunction import UserCRUD
 
 users: Dict[str, "User"] = {}
 
