@@ -6,6 +6,9 @@ from methods.optimization import optimization
 import numpy as np
 import uuid
 import utilities.bigQuery as bigQuery
+import logging
+from flask import flash
+from flask_login import current_user
 
 stock = stock()
 optimization = optimization()
