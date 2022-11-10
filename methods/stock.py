@@ -19,6 +19,7 @@ class stock():
         self.screener_df = pd.DataFrame()
         self.index = 'S&P 500' #default
         self.sector = ''
+        self.sp500_data = pd.DataFrame()
      
     def get_stock_data_by_sector_and_index(self,index,sector):
         self.index = index
@@ -37,7 +38,7 @@ class stock():
 
     def get_screener_data(self):
         if self.screener_df.empty:
-            return  pickle.unpickle_file('stock')
+            return self.sp500_data
         return self.screener_df
 
     def update_avg_metric_dic(self,sector):
@@ -108,13 +109,14 @@ class stock():
         strength_calculated_df  = strength_calculated_df.fillna(0)
         return strength_calculated_df
 
-    def cache_stock_data(self):
-        if not pickle.checkFile('stock'):
-            data = self.get_stock_data_by_sector_and_index(sector = 'Any', index='S&P 500')
-            pickle.pickle_file(data,'stock')
+    def cache_sp500_data(self): # need to research whether storing the value in class is more effecient vs using pickle
+        if self.sp500_data.empty:
+            self.sp500_data = self.get_stock_data_by_sector_and_index(sector = 'Any', index='S&P 500')
+        return self.sp500_data
 
     def get_title(self):
         return "{index} {sector} Data".format(sector = self.sector, index =self.index)
+
 
     
    
