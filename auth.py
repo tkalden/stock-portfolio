@@ -10,7 +10,6 @@ auth = Blueprint('auth', __name__)
 
 @auth.route('/login', methods=['GET', 'POST']) # define login page path
 def login(): # define login page fucntion
-    error = ''
     if request.method=='GET': # if the request is a GET we return the login page
         return render_template('login.html')
     else: # if the request is POST the we check if the user exist and with te right password
@@ -41,7 +40,6 @@ def signup(): # define the sign up function
         password = request.form.get('password')
         confirm = request.form.get('confirm')
         user = User.updateUserData(email)
-        print('user',user)
         if user: # if a user is found, we want to redirect back to signup page so user can try again
             flash('Email address already exists.Please try loggin in')
             return redirect(url_for('auth.signup'))

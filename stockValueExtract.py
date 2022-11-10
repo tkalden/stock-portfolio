@@ -14,6 +14,7 @@ class stock():
         self.optimized_df = pd.DataFrame()
         self.metric_df = pd.DataFrame()
         self.avg_metric_df = pd.DataFrame()
+        self.screener_df = pd.DataFrame()
         self.top_dict = []
         self.optimal_number_stocks = 0
         self.previous_highest_expected_return = 0
@@ -30,6 +31,14 @@ class stock():
         self.metric_df=self.metric_df.applymap(str)
          #the dataTable throws invalid json if the dtype is not string. Workaround solution for now
         return self.metric_df
+
+    def save_screener_data(self,df):
+        self.screener_df = df
+
+    def get_screener_data(self):
+        if self.screener_df.empty:
+            return self.metric_df
+        return self.screener_df
 
     def update_avg_metric_dic(self,sector):
         if sector == 'Any':
@@ -144,15 +153,14 @@ class stock():
         for sector in sectors:
             new_df = df[df['Sector'] == sector].head(5)
             labels = new_df["Ticker"].values.tolist()
+            chart_values = pd.DataFrame()
             if base_metric == 'Strength':
-                strength_values = new_df["strength"]
-                #strength_values = np.divide(1,np.sum(strength_values)) * strength_values
-                values = strength_values.values.tolist()
-                self.top_dict.append({"id": sector, "values":values, "labels":labels, "title": sector})
+                chart_values = new_df["strength"]
+                #strength_values = np.divide(1,np.sum(strength_values)) * strength_values   
             elif base_metric == 'Dividend':
-                dividend_values = new_df["dividend"] 
-                values = dividend_values.values.tolist()
-                self.top_dict.append({"id": sector, "values":values, "labels":labels, "title": sector})
+                chart_values = new_df["dividend"] 
+            values = chart_values.values.tolist()
+            self.top_dict.append({"id": sector, "values":values, "labels":labels, "title": sector})
         return self.top_dict
 
     def build_portfolio_from_user_input_tickers(self, df, selected_ticker_list, desired_return, investing_amount,risk_tolerance):
@@ -164,7 +172,8 @@ class stock():
         self.optimized_df = df #initialize the df
         self.optimized_df = self.optimize_expected_return(
             number_of_stocks=len(selected_ticker_list),threshold = len(selected_ticker_list), desired_return = desired_return)
-        return self.calculate_portfolio_value_and_share(investing_amount)
+        self.optimized_df  = self.calculate_portfolio_value_and_share(investing_amount)
+        return self.optimized_df 
 
     def calculate_portfolio_value_and_share(self, investing_amount):
         self.calculate_portfolio_value_distribution(investing_amount)
@@ -177,7 +186,8 @@ class stock():
         self.optimized_df = df[(df['strength'] > 0) & (df['expected_annual_return'].astype(float) > 0) & (df['price'].astype(float) < float(maximum_stock_price))]
         self.optimized_df = self.get_risk_tolerance_data(risk_tolerance,self.optimized_df)
         self.optimized_df = self.calculate_weighted_expected_return(self.optimized_df.head(5)) 
-        return self.calculate_portfolio_value_and_share(investing_amount)
+        self.optimized_df  = self.calculate_portfolio_value_and_share(investing_amount)
+        return self.optimized_df 
     
     def get_risk_tolerance_data(self,risk_tolerance,df):
         if risk_tolerance == helper.RiskEnum.HIGH.value:
@@ -250,12 +260,12 @@ class stock():
         res = [df_tuple[key].to_dict('records') for key in df_tuple.keys()]
         self.portfolio = res
         return res
-
-    def get_porfolio_count(self):
-        return self.porfolio_count
     
     def get_porfolio(self):
         return self.portfolio
+
+    def get_build_porfolio(self):
+        return self.optimized_df
 
     def cache_stock_data(self):
         if not self.checkFile('stock'):

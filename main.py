@@ -32,7 +32,7 @@ def screener():
         sector = request.form.get('sector')
         index = request.form.get('index')
         data = stockValueExtractor.get_stock_data_by_sector_and_index(sector = sector, index=index)
-        stockValueExtractor.pickle_file(data,'screener')      
+        stockValueExtractor.save_screener_data(data)
  return render_template('screener.html', index_sector_lists = helper.index_sector(), title = "{index} {sector} Data".format(sector = sector, index =index)
  )
 
@@ -53,26 +53,19 @@ def build():
             strength_df = stockValueExtractor.update_strength_data(sector = 'Any', index = 'S&P 500',stock_type = request.form["stock_type"])       
             portfolio = stockValueExtractor.build_portfolio_from_user_input_tickers(strength_df,(list(set(request.form.getlist("stock[]")))),request.form["expected_return_value"], request.form["investing_amount"],request.form.get('risk_tolerance'))
         elif request.form["btn"]=="Save Portfolio":
-             # for some reason the portfolio varible goes to empty dataframe when the save is clicked.Following
-            # is the work around
-             portfolio = pd.read_pickle(helper.get_pickle_file()["portfolio"])
+             portfolio = stockValueExtractor.get_build_porfolio()
              if not portfolio.empty:
                 app.logger.info(f'Saving portfolio Data %',portfolio)
                 stockValueExtractor.save_portfolio_data(portfolio,current_user.id)
                 flash('Successfully Saved Porfolio')
         total_portfolio_return = round(stockValueExtractor.calculate_portfolio_return(portfolio),2)
         total_portfolio_risk = round(stockValueExtractor.calculate_portfolio_risk(portfolio),2)
-    stockValueExtractor.pickle_file(portfolio,'portfolio')  
     title = "Portfolio Return: {portfolio_return} % | Portfolio Risk: {risk} %".format(portfolio_return = total_portfolio_return, risk = total_portfolio_risk)
     return render_template('buildPortfolio.html',stock_types = helper.get_stock_type(),ticker_list = ticker_list,parameters=helper.get_optimization_parameters(),ticker_sector_lists=helper.index_select_attributes(),title= title,columns = helper.build_porfolio_column(),risks = helper.risk())
 
 @main.route('/screener/data')
 def stock_data():  
-    #by default if there is no screener data at all then populate with defualt stock data
-    if not stockValueExtractor.checkFile('screener'):
-        data = pd.read_pickle(helper.get_pickle_file()["stock"]).to_dict('records')
-    else:
-        data = pd.read_pickle(helper.get_pickle_file()["screener"]).to_dict('records')
+    data = stockValueExtractor.get_screener_data().to_dict('records')
     return {'data': data}
 
 @main.route('/my-portfolio', methods=["GET","POST"])
@@ -87,7 +80,7 @@ def portfolio_data():
 
 @main.route('/portfolio/data')
 def build_portfolio_data():
-    return {'data': pd.read_pickle(helper.get_pickle_file()["portfolio"]).to_dict('records')}
+    return {'data': stockValueExtractor.get_build_porfolio().to_dict('records')}
 
 @main.route('/value-chart')
 def valueChart():
