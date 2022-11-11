@@ -51,6 +51,14 @@ def get_user_by_id_and_pw(user_id,password):
     query_parameters = [bigquery.ScalarQueryParameter("user_id", "STRING", user_id),bigquery.ScalarQueryParameter("password", "STRING", password)]
     return run_query(query,query_parameters)
 
+def get_subscription_by_id(email):
+    query = """
+    SELECT * FROM `stockdataextractor.stock.subscription-table` t
+    WHERE t.email = @email
+     """
+    query_parameters = [bigquery.ScalarQueryParameter("email", "STRING", email)]
+    return run_query(query,query_parameters)
+
 def get_user_by_id(email):
     query = """
     SELECT * FROM `stockdataextractor.stock.user-table` t

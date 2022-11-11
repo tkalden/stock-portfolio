@@ -1,12 +1,11 @@
 from flask import Blueprint, render_template, request,redirect,url_for,flash
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import login_user, logout_user, login_required
+from flask_login import login_user, logout_user, login_required,login_manager
 from utilities.model import User
 from utilities.userFunction import UserCRUD
 
-
 auth = Blueprint('auth', __name__)
-
+UserCRUD = UserCRUD()
 
 @auth.route('/login', methods=['GET', 'POST']) # define login page path
 def login(): # define login page fucntion
@@ -20,10 +19,10 @@ def login(): # define login page fucntion
         # check if the user actually exists
         # take the user-supplied password, hash it, and compare it to the hashed password in the database
         if not user:
-            flash('Please sign up before!')
+            flash('Please sign up before!','danger')
             return redirect(url_for('auth.login'))
         elif not check_password_hash(user[0].password, password):
-            flash('Please check your login details and try again.')
+            flash('Please check your login details and try again.','danger')
             return redirect(url_for('auth.login')) # if the user doesn't exist or password is wrong, reload the page
         # if the above check passes, then we know the user has the right credentials
         login_user(user[0], remember=remember)
@@ -44,14 +43,26 @@ def signup(): # define the sign up function
             flash('Email address already exists.Please try loggin in')
             return redirect(url_for('auth.signup'))
         elif password!= confirm:
-            flash('Passwords didnot match','error')
+            flash('Passwords didnot match','danger')
             return redirect(url_for('auth.signup'))
         # create a new user with the form data. Hash the password so the plaintext version isn't saved.
-        UserCRUD.save_user_data(email=email, name=name, password=generate_password_hash(password, method='sha256')) #
+        UserCRUD.save_user_data(email=email, name=name, password=generate_password_hash(password, method='sha256')) 
+        flash('Successfully Registered.Please Log in.','success')
         return redirect(url_for('auth.login'))
 
 @auth.route('/logout') # define logout path
 @login_required
 def logout(): #define the logout function
     logout_user()
+    flash('Thanks for visting stocknity','success')
     return redirect(url_for('main.home'))
+
+@auth.route('/subscribe', methods=['GET', 'POST'])
+def subscribe():
+    if request.method == 'POST':
+         subscribe_email = request.form.get('subscribe')
+         UserCRUD.subscribe(subscribe_email)
+    return redirect(url_for('main.home')) 
+
+
+

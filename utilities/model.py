@@ -3,6 +3,7 @@ from typing import Dict, Optional
 from utilities.userFunction import UserCRUD
 
 users: Dict[str, "User"] = {}
+UserCRUD = UserCRUD()
 
 class User(UserMixin):
 
