@@ -78,14 +78,13 @@ class stock():
         if stock_type == enum.StockType.VALUE.value:
             df["strength"] = df["strength"]
         elif stock_type == enum.StockType.GROWTH.value:
-            df["strength"] = -1*df["strength"]
+            df["strength"] = -1* df["strength"]
         else:
             raise ValueError("Stock Type must be Value or Growth")
         df = df.replace(np.nan,0)
         df = np.round(df, decimals=3) 
         df = df.sort_values(by=["strength","expected_annual_return"], ascending=[False,False])
         return df
-
     
     def get_risk_tolerance_data(self,risk_tolerance,df):
         if risk_tolerance == enum.RiskEnum.HIGH.value:
