@@ -18,13 +18,11 @@ chart = chart()
 
 @main.route('/', methods=['POST','GET'])
 def home():
-   stock.cache_sp500_data()
    return render_template('home.html')
 
 @main.route('/profile', methods=['POST','GET'])
 @login_required
 def profile():
-   stock.cache_sp500_data()
    return render_template('profile.html',name = current_user.name)
 
 @main.route('/screener', methods=["GET","POST"])
@@ -85,17 +83,17 @@ def build_portfolio_data():
 
 @main.route('/value-chart')
 def valueChart():
-    charts = chart.get_chart_data("value",enum.StockType.VALUE.value,enum.Metric.STRENGTH.value)
+    charts = chart.get_chart_data(enum.StockType.VALUE.value,enum.Metric.STRENGTH.value)
     return render_template('chart.html',charts = charts,title= "Top Value Stocks" )
 
 @main.route('/growth-chart')
 def growthChart():
-    charts = chart.get_chart_data("growth",enum.StockType.GROWTH.value, enum.Metric.STRENGTH.value)
+    charts = chart.get_chart_data(enum.StockType.GROWTH.value, enum.Metric.STRENGTH.value)
     return render_template('chart.html',charts = charts, title= "Top Growth Stocks")
 
 @main.route('/dividend-chart')
 def dividendChart():
-    charts = chart.get_chart_data("dividend",enum.StockType.NONE.value, enum.Metric.DIVIDEND.value)
+    charts = chart.get_chart_data(enum.StockType.NONE.value, enum.Metric.DIVIDEND.value)
     return render_template('chart.html',charts = charts, title= "Top Dividend Stocks" )
 
 app = create_app() # we initialize our flask app using the __init__.py function

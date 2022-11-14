@@ -6,12 +6,16 @@ import enums.enum as enum
 import logging
 pd.options.mode.chained_assignment = None  # default='warn'
 from utilities.pickle import pickle
+from cachetools import cached, TTLCache
+
 
 logging.basicConfig(level = logging.INFO)
 
 pickle = pickle() 
+cache = TTLCache(maxsize=1000, ttl=86400)
 
 class stock():
+
     # init method or constructor
     def __init__(self):
         self.metric_df = pd.DataFrame()
@@ -38,7 +42,7 @@ class stock():
 
     def get_screener_data(self):
         if self.screener_df.empty:
-            return self.sp500_data
+            return self.cache_sp500_data()
         return self.screener_df
 
     def update_avg_metric_dic(self,sector):
@@ -108,11 +112,12 @@ class stock():
         strength_calculated_df  = strength_calculated_df.fillna(0)
         return strength_calculated_df
 
+    @cached(cache)
     def cache_sp500_data(self): # need to research whether storing the value in class is more effecient vs using pickle
-        if self.sp500_data.empty:
-            self.sp500_data = self.get_stock_data_by_sector_and_index(sector = 'Any', index='S&P 500')
+        #if self.sp500_data.empty:
+        self.sp500_data = self.get_stock_data_by_sector_and_index(sector = 'Any', index='S&P 500')
         return self.sp500_data
-
+    
     def get_title(self):
         return "{index} {sector} Data".format(sector = self.sector, index =self.index)
 
