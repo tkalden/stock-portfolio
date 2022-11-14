@@ -11,3 +11,4 @@ seaborn
 pandas_datareader
 flask-login
 werkzeug
+cachetools

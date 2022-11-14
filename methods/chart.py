@@ -3,34 +3,27 @@ import enums.enum as enum
 import pandas as pd
 from methods.stock import stock
 from utilities.pickle import pickle
+from cachetools import cached, TTLCache
+
 
 pickle = pickle()
 stock = stock()
+cache = TTLCache(maxsize=1000, ttl=86400)
+
 class chart():
      # init method or constructor
     def __init__(self):
         self.top_dict = []
-        self.chart_df = {
-            "value" : pd.DataFrame(),
-            "growth" : pd.DataFrame(),
-            "dividend" : pd.DataFrame()
-        }
-        self.sp_500_data = pd.DataFrame()
-    
-    def get_chart_data(self,key,stock_type,base_metric):
-        if self.sp_500_data.empty:
-            self.sp_500_data = stock.get_stock_data_by_sector_and_index('S&P 500','Any')
-        df = pd.DataFrame()
-        if not self.chart_df[key].empty:
-            df = self.chart_df[key] 
-        else:
-            df = self.sp_500_data
-            if base_metric == enum.Metric.STRENGTH.value:
-                stock.update_avg_metric_dic('Any')
-                df = stock.calculate_strength_value(df,stock_type)
-            elif base_metric == enum.Metric.DIVIDEND.value:
-                df = df.sort_values(by="dividend", ascending=False)
-            self.chart_df[key] = df
+ 
+    @cached(cache)
+    def get_chart_data(self,stock_type,base_metric):
+        sp_500_data = stock.cache_sp500_data()
+        df = sp_500_data
+        if base_metric == enum.Metric.STRENGTH.value:
+            stock.update_avg_metric_dic('Any')
+            df = stock.calculate_strength_value(df,stock_type)
+        elif base_metric == enum.Metric.DIVIDEND.value:
+            df = df.sort_values(by="dividend", ascending=False)
         return self.top_stocks(df,base_metric)
        
     def top_stocks(self,df,base_metric):
