@@ -1,4 +1,5 @@
 from flask import Blueprint
+import methods.news as news
 from methods.stock import stock
 from methods.chart import chart
 from methods.portfolio import portfolio as buildPortfolio
@@ -18,7 +19,8 @@ chart = chart()
 
 @main.route('/', methods=['POST','GET'])
 def home():
-   return render_template('home.html')
+   news_df = news.get_news();
+   return render_template('home.html', news_df = news_df)
 
 @main.route('/profile', methods=['POST','GET'])
 @login_required

@@ -12,3 +12,4 @@ pandas_datareader
 flask-login
 werkzeug
 cachetools
+google-reauth
