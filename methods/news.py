@@ -9,5 +9,4 @@ def get_news():
     logging.info("News %s",news.head(5))
     return news
 
-
             

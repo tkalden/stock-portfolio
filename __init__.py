@@ -1,11 +1,16 @@
 from flask import Flask
-from flask_toastr import Toastr
 from flask_login import LoginManager
-from utilities.model import User 
+from flask_toastr import Toastr
+
+from methods.redis import redis_cache
+from utilities.model import User
 
 
 def create_app():
     app = Flask(__name__)
+    app.deug = True
+    app.config['REDIS_URL'] = "redis://localhost:6379/0"
+    redis_cache.init_app(app)
 
     toastr = Toastr()
 

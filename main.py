@@ -1,17 +1,19 @@
-from flask import Blueprint
-import methods.news as news
-from methods.stock import stock
-from methods.chart import chart
-from methods.portfolio import portfolio as buildPortfolio
-import utilities.helper as helper
-import enums.enum as enum
-from flask import render_template, request,flash
-import pandas as pd
-from __init__ import create_app
-from flask_login import current_user,login_required
 import logging
 
+import pandas as pd
+from flask import Blueprint, flash, jsonify, render_template, request
+from flask_login import current_user, login_required
+
+import enums.enum as enum
+import methods.news as news
+import utilities.helper as helper
+from __init__ import create_app
+from methods.chart import chart
+from methods.portfolio import portfolio as buildPortfolio
+from methods.stock import stock
+
 main = Blueprint('main', __name__)
+app = create_app() # we initialize our flask app using the __init__.py function
 
 stock = stock()
 buildPortfolio = buildPortfolio()
@@ -29,18 +31,16 @@ def profile():
 
 @main.route('/screener', methods=["GET","POST"])
 def screener():
- if request.method == 'POST': 
-    if request.form["btn"]=="Search":
+    if request.method == 'POST' and request.form["btn"]=="Search":
         sector = request.form.get('sector')
         index = request.form.get('index')
-        data = stock.get_stock_data_by_sector_and_index(sector = sector, index=index)
-        stock.save_screener_data(data)
- return render_template('screener.html', index_sector_lists = helper.index_sector(), title = stock.get_title())
+        stock.get_stock_data_by_sector_and_index(sector=sector, index=index)
+    return render_template('screener.html', index_sector_lists=helper.index_sector(), title=stock.get_title())
 
 @main.route('/portfolio', methods=["GET","POST"])
 @login_required
 def build():
-    stock_data = stock.cache_sp500_data()
+    stock_data = stock.get_sp500_data()
     ticker_list = sorted(list(set(stock_data["Ticker"])))
     total_portfolio_return = 0
     total_portfolio_risk = 0
@@ -67,6 +67,8 @@ def build():
 @main.route('/screener/data')
 def stock_data():  
     data = stock.get_screener_data().to_dict('records')
+    logging.info("Data %s",data)
+    logging.info(stock.is_valid_json(data))
     return {'data': data}
 
 @main.route('/my-portfolio', methods=["GET","POST"])
@@ -88,6 +90,12 @@ def valueChart():
     charts = chart.get_chart_data(enum.StockType.VALUE.value,enum.Metric.STRENGTH.value)
     return render_template('chart.html',charts = charts,title= "Top Value Stocks" )
 
+@main.route('/get-stock-info')
+def get_stock_info():
+    ticker = request.args.get('ticker')
+    logging.info("Ticker %s",ticker);
+    return chart.get_ticker_fundamental(ticker)
+
 @main.route('/growth-chart')
 def growthChart():
     charts = chart.get_chart_data(enum.StockType.GROWTH.value, enum.Metric.STRENGTH.value)
@@ -98,6 +106,5 @@ def dividendChart():
     charts = chart.get_chart_data(enum.StockType.NONE.value, enum.Metric.DIVIDEND.value)
     return render_template('chart.html',charts = charts, title= "Top Dividend Stocks" )
 
-app = create_app() # we initialize our flask app using the __init__.py function
 if __name__ == '__main__':
     app.run(debug=True) # run the flask app on debug mode

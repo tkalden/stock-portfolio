@@ -10,6 +10,10 @@ ENV PYTHONUNBUFFERED True
 ENV APP_HOME /app
 WORKDIR $APP_HOME
 COPY . ./
+ADD . service-acount-key.json $APP_HOME
+# Set the GOOGLE_APPLICATION_CREDENTIALS environment variable
+ENV GOOGLE_APPLICATION_CREDENTIALS=$APP_HOME/service-account-key.json
+
 
 # Install production dependencies.
 RUN pip install --no-cache-dir -r requirements.txt

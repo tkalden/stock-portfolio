@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "stockdataextractor",
+  "private_key_id": "5704d9359e7f8bec4bb42e8ce1df26dc4d1e239d",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQClLOoSXmuWT/R3\nKIKxMeanE2vPxv7ev28Snw3crCTO2mJ88c/G+aLkjtWcjY0JSt/djFDCR0rt4LZL\nOBLUIpp+DYMdpOGfoqijJ0wX9LeS7ibKyp6blbtLiQG7nueGZy+cstlcWd0pXMf7\nloZsiwRGgM2CpB58zYoYxFA2POEoOMCD1jl/z1nQXSFMUsORGFTiDtL8g8hGuprG\nVPu0LXDCe9F/Kqc6SMHm2+MN7G0e6jxFo0YNEUTKUINfnVBJM951jZmnoqsDIRqF\nYCgT/i2yipdp25SkZA3kbUvgeeYTrmdWgPYffne+GFVm3nI4uPi1e7RV8PfpNDwY\n8BRmKJGTAgMBAAECggEAUOtUjwQvy/dGqhuwDzQFrgNPNX7lPOXm+eXvChVRgP8u\n8cwbQPzqZvNsxeH43r0OOED2DX+Uvz3vwKDrZH7BVhCzk9HDcQvkdu2ZE0Fhr7s5\nSO8DzfAITkSEE1ERVuB1TFy4LMyfkxRvqpr/Juzh/tI6HA7gGr8tMN339+JSYfvE\n4YbOsMdZAL79MpBqXpLgbUhlpvivL8RH5wAu7CQDoSvsSsNKgKG/Kl5zaKNNx5ku\nBsnnlM47N3N5IGl1QT38yfFF5RWrkG2f4KhY0kWT/E7jx2dhrTWgQzKCXWJ70Jh8\n4GTbgPzhlM3HSdgXuIZiKnJpoYaWm0vskNwJdqlmuQKBgQDmALHkG3vd6rcG7bRJ\n4YdU76Z0tmkySHrbkxSh6bSzu1iPTiJqv79i8aHDvHq3HOx0qm7+5luBqCPYoRN2\nSldtqcoQwZu7JKeg9UttJHViFe1KsY+n8ErkfzWsvozasHz24ISbmd1gjw7q2nY6\nBFWIK1mwuhoCZU8qgWpf/qA7eQKBgQC32GSHuURhRuOnlEeQq13NW6WXz7gaulC7\npVGtfWBw63EFIhz4GEkdSZz+u99Nik1PXd91D4xwiPFkQXxqONF6EtnJN7XyAlZv\n4HWs/Ti7VLPpZ3LIXBe/I3AiDsFFxsmIiKE8142z2U6mKDeuOhawhBmuY4ydCNwq\n3ZF+sInmawKBgHIDcCtaMGnOWxI1LQTepj5FWedLMRR692P3IegtOKVLvlezbL4r\n9QxwKTclLFOvI8ulXMZAnKXGGpbdKg+eRH6ZBxCNWMxJHEterRgaVZHcurcnE8Y1\nCHsCUDIkdyBFEn0yyKl1eVbPM57Z0ndqBJgunRRM/G2pmLfCVV/mkblJAoGALglO\n6zm2aNGSklUsMorm+1SWu9Q1GuRK8SItuM7rhns+mvV24Z1bOa1EVfl/qnAWeehc\n23hgR5HTOLK5T/QYaIQt6xg7RHXXZT6E2SOzwB0uzCSudoOxIpjiLHUbarijoL/t\n+ElV35JsAmmRv9wl8F+z+ppNDMm6MDW5iEr2zS8CgYAbMx4fXEa6rQ+FKDhWcxIK\nWz/XYIEKwM6aBj2eei1SEBKUdZ582C5Pcv3RQLuvF7b2jszWr0ajuOvpnGE7q9GD\nQc5gPCgF1mXu94ex+pHNupbZhj9O9TqqE26uCdnqsfEI0Q7gI8qysKHW/Z8MGOfq\nVCAxhmrk4O7+P7wt1T6qFw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "stockvalueextractor-936@stockdataextractor.iam.gserviceaccount.com",
+  "client_id": "114124674186431783838",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/stockvalueextractor-936%40stockdataextractor.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

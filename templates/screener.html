@@ -3,19 +3,19 @@
 <form class="form-inline row" method="post" action="">
   {% for ts in index_sector_lists %}
   <div class="col">
-  <label class = "text-black" for ="{{ts['label']}}"> {{ts['title']}} </label>
-      <select class="form-select"  name="{{ts['label']}}" id ="{{ts['label']}}" >
-          {% for e in ts['content']  %}
-              <option value="{{ e }}">{{ e }}</option>
-          {% endfor %}
-      </select>
-    </div>
+    <label class="text-black" for="{{ts['label']}}">{{ts['title']}}</label>
+    <select class="form-select" name="{{ts['label']}}" id="{{ts['label']}}">
+      {% for e in ts['content'] %}
+      <option value="{{ e }}">{{ e }}</option>
+      {% endfor %}
+    </select>
+  </div>
   {% endfor %}
-<div class="col">
-<input type="submit" name="btn" class = "bg-light text-dark col mt-5" value="Search" />
-</div>
-</form> 
-<div class = "table-responsive">
+  <div class="col">
+    <input type="submit" name="btn" class="bg-light text-dark col mt-5" value="Search" id="searchBtn" />
+  </div>
+</form>
+<div class="table-responsive">
   <table id="data" class="table table-striped table-dark" style="width: 100%">
     <thead>
       <tr>
@@ -35,41 +35,49 @@
         <th>Beta</th>
         <th>Expected Return</th>
         <th>Expected Risk</th>
-        <th> Ratio</th>
+        <th>Ratio</th>
       </tr>
     </thead>
     <tbody>
     </tbody>
   </table>
-  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-  <script>
-    $(document).ready(function () {
-      $('#data').DataTable({
-        ajax: '/screener/data',
-        scrollX: true,
-        columns: [
-          {data: 'Ticker'},
-          {data: 'Sector'},
-          {data: 'Index', searchable: false},
-          {data: 'pe', searchable: false},
-          {data: 'fpe', searchable: false},
-          {data: 'peg', searchable: false},
-          {data: 'pc', searchable: false},
-          {data: 'pb', searchable: false},
-          {data: 'insider_own',searchable: false},
-          {data: 'price',searchable: false},
-          {data: 'dividend',searchable: false},
-          {data: 'roe', searchable: false},
-          {data: 'roi',searchable: false},
-          {data: 'beta', orderable: false},
-          {data: 'expected_annual_return',searchable: false},
-          {data: 'expected_annual_risk',searchable: false},
-          {data: 'return_risk_ratio',searchable: false}
-        ],
+<script>
+  $(document).ready(function () {
+    $('#data').DataTable({
+      ajax: '/screener/data',
+      scrollX: true,
+      columns: [
+        { data: 'Ticker' },
+        { data: 'Sector' },
+        { data: 'Index', searchable: false },
+        { data: 'pe', searchable: false },
+        { data: 'fpe', searchable: false },
+        { data: 'peg', searchable: false },
+        { data: 'pc', searchable: false },
+        { data: 'pb', searchable: false },
+        { data: 'insider_own', searchable: false },
+        { data: 'price', searchable: false },
+        { data: 'dividend', searchable: false },
+        { data: 'roe', searchable: false },
+        { data: 'roi', searchable: false },
+        { data: 'beta', orderable: false },
+        { data: 'expected_annual_return', searchable: false },
+        { data: 'expected_annual_risk', searchable: false },
+        { data: 'return_risk_ratio', searchable: false }
+      ],
+    });
+
+    // Function to set selected value in dropdowns after search button is clicked
+    $('#searchBtn').click(function () {
+      $('select').each(function () {
+        var selectedValue = $(this).val();
+        $(this).find('option[value="' + selectedValue + '"]').prop('selected', true);
       });
     });
-  </script>
+  });
+</script>
 {% endblock %}

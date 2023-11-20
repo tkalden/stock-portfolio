@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class IndexType(Enum):
     SP500 = 'S&P 500'
     DJIA = 'DJIA'
@@ -37,3 +38,5 @@ class FunctionEnum(Enum):
     FINANCIAL = 'financial'
     G_OVERVIEW = 'gOverview'
     G_VALUATION = 'gValuation'
+
+    
