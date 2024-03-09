@@ -28,8 +28,6 @@ class stock():
         self.screener_df = pd.DataFrame()
         self.index = 'S&P 500' #default
         self.sector = 'Any'
-        self.sp500_data = pd.DataFrame()
-        self.key = 'SP_500_Any_screen_data' #default
      
     def update_with_return_data(self,df):
         helper.round_decimal_place(df,['insider_own','dividend','roi','roe'])
@@ -41,10 +39,10 @@ class stock():
         return df
 
     def get_screener_data(self):
-        if check_data_from_redis(self.key):
-            return fetch_data_from_redis(self.key)
-        data = self.update_with_return_data(SourceDataMapperService.get_data_by_index_sector(self.index,self.sector))
-        save_data_to_redis(data,self.key)
+        if self.sector == 'Any':
+            data = self.update_with_return_data(SourceDataMapperService.get_data_by_index(self.index))
+        else:
+            data = self.update_with_return_data(SourceDataMapperService.get_data_by_index_sector(self.index,self.sector))
         return data
 
     def update_avg_metric_dic(self,sector):
@@ -116,15 +114,12 @@ class stock():
         sector_index_data = self.update_with_return_data(sector_index_data)
         self.update_avg_metric_dic(sector)
         strength_calculated_df = self.calculate_strength_value(sector_index_data,stock_type)
-        #strength_calculated_df  = strength_calculated_df.fillna(0)
         return strength_calculated_df
     
     def update_key_sector_and_index(self,sector,index):
-        index_key = index.replace(" ", "_")
-        sector_key = sector.replace(" ", "_")
-        self.key = f"{index_key}_{sector_key}_screen_data"
         self.index = index
         self.sector = sector
+       
           
     def get_title(self):
         return "{index} {sector} Data".format(sector = self.sector, index =self.index)

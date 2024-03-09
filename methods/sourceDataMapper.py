@@ -84,23 +84,9 @@ class SourceDataMapperService:
         else:
             columns.update({"Name":"Sector"})
         df.rename(columns=columns, inplace=True)
-        
         # Drop duplicate columns
         df = df.loc[:, ~df.columns.duplicated()]
-        
         return df        
-
-    def get_all_data(self):
-        key = 'any-sector-index'
-        if check_data_from_redis(key):
-                return fetch_data_from_redis(key)
-        dfs = []  # List to hold DataFrames
-        for index in INDEX:
-            for sector in SECTORS:
-                dfs.append(self.get_data_by_index_sector(index,sector))
-        combined_data = pd.concat(dfs)  # Combine all DataFrames
-        save_data_to_redis(combined_data, key) # need to check if i can make this indepedent so the return is not blocked by this
-
 
     def get_data_by_index_sector(self,index,sector):
         logging.info(f"Fetching data for {index} and {sector}")
@@ -130,17 +116,11 @@ class SourceDataMapperService:
             time.sleep(1)
 
     def get_data_by_index(self, index):
-        logging.info(f"Fetching data for {index}")
-        key=index.replace(" ", "_")
         combined_data = pd.DataFrame()  # Initialize an empty DataFrame
-        if check_data_from_redis(key):
-            return fetch_data_from_redis(key)
-        logging.info("Data not found in Redis for key {key}")
         for sector in SECTORS:
             df = self.get_data_by_index_sector(index, sector)
             combined_data = pd.concat([combined_data, df])  # Combine all DataFrames
-        save_data_to_redis(self.map_to_schema(combined_data, False), key=key)  # need to check if i can make this independent so the return is not blocked by this
-        return combined_data
+        return self.map_to_schema(combined_data, False)  # need to check if i can make this independent so the return is not blocked by this
     
 
 
