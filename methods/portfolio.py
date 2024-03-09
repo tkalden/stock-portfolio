@@ -1,14 +1,16 @@
-import utilities.helper as helper
-import pandas as pd
-from methods.stock import stock
-from utilities.pickle import pickle
-from methods.optimization import optimization
-import numpy as np
-import uuid
-import utilities.bigQuery as bigQuery
 import logging
+import uuid
+
+import numpy as np
+import pandas as pd
 from flask import flash
 from flask_login import current_user
+
+import utilities.bigQuery as bigQuery
+import utilities.helper as helper
+from methods.optimization import optimization
+from methods.stock import stock
+from utilities.pickle import pickle
 
 stock = stock()
 optimization = optimization()
@@ -22,7 +24,7 @@ class portfolio():
         self.previous_highest_expected_return = 0
         self.threshold = 0
         self.desired_return = 0
-        self.portfolio = []
+        self.portfolio_list = []
 
     def build_portfolio_from_user_input_tickers(self, df, selected_ticker_list, desired_return, investing_amount,risk_tolerance):
         df = df[df.Ticker.isin(selected_ticker_list)]
@@ -58,7 +60,7 @@ class portfolio():
     def calculate_portfolio_value_distribution(self, investing_amount):
         self.optimized_df['invested_amount'] = np.multiply(
         self.optimized_df['weight'].astype(float), float(investing_amount))
-        return
+    
 
     def calculate_portfolio_return(self,df):
          porfolio_return = df['weighted_expected_return']
@@ -86,11 +88,11 @@ class portfolio():
         df = bigQuery.get_portfolios_by_user_id(user_id)
         df_tuple = dict(tuple(df.groupby('portfolio_id')))
         res = [df_tuple[key].to_dict('records') for key in df_tuple.keys()]
-        self.portfolio = res
+        self.portfolio_list = res
         return res
     
     def get_porfolio(self):
-        return self.portfolio
+        return self.portfolio_list
 
     def get_build_porfolio(self):
         return self.optimized_df

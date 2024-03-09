@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class IndexType(Enum):
     SP500 = 'S&P 500'
     DJIA = 'DJIA'
@@ -7,6 +8,7 @@ class IndexType(Enum):
 class StockType(Enum):
     VALUE = 'Value'
     GROWTH = 'Growth'
+    DIVIDEND = 'Dividend'
     NONE = ''
 
 class RiskEnum(Enum):

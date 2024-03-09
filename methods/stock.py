@@ -1,18 +1,23 @@
-import pandas as pd
-import numpy as np
-import utilities.helper as helper
-import utilities.bigQuery as bigQuery
-import enums.enum as enum
 import logging
-pd.options.mode.chained_assignment = None  # default='warn'
-from utilities.pickle import pickle
-from cachetools import cached, TTLCache
 
+import numpy as np
+import pandas as pd
+
+import enums.enum as enum
+import utilities.helper as helper
+from methods.annualReturn import get_annual_return_data
+from methods.sourceDataMapper import SourceDataMapperService
+from utilities.redis import (check_data_from_redis, fetch_data_from_redis,
+                             save_data_to_redis)
+
+pd.options.mode.chained_assignment = None  # default='warn'
+
+from utilities.pickle import pickle
 
 logging.basicConfig(level = logging.INFO)
 
 pickle = pickle() 
-cache = TTLCache(maxsize=1000, ttl=86400)
+SourceDataMapperService = SourceDataMapperService()
 
 class stock():
 
@@ -22,48 +27,48 @@ class stock():
         self.avg_metric_df = pd.DataFrame()
         self.screener_df = pd.DataFrame()
         self.index = 'S&P 500' #default
-        self.sector = ''
+        self.sector = 'Any'
         self.sp500_data = pd.DataFrame()
+        self.key = 'SP_500_Any_screen_data' #default
      
-    def get_stock_data_by_sector_and_index(self,index,sector):
-        self.index = index
-        self.sector = sector
-        self.metric_df = bigQuery.get_stock_data(index, sector)
-        helper.round_decimal_place(self.metric_df,['insider_own','dividend','roi','roe'])
-        self.metric_df = self.combine_with_return_data(self.metric_df)
-        self.metric_df = self.metric_df.drop_duplicates()
-        self.metric_df  = self.metric_df.replace(np.nan,0)
-        self.metric_df = self.metric_df.applymap(str)
+    def update_with_return_data(self,df):
+        helper.round_decimal_place(df,['insider_own','dividend','roi','roe'])
+        #df = self.combine_with_return_data(df)  need to investigate why this is not working
+        df = df.drop_duplicates()
+        df  = df.replace(np.nan,0)
+        df = df.applymap(str)
          #the dataTable throws invalid json if the dtype is not string. Workaround solution for now
-        return self.metric_df
-
-    def save_screener_data(self,df):
-        self.screener_df = df
+        return df
 
     def get_screener_data(self):
-        if self.screener_df.empty:
-            return self.cache_sp500_data()
-        return self.screener_df
+        if check_data_from_redis(self.key):
+            return fetch_data_from_redis(self.key)
+        data = self.update_with_return_data(SourceDataMapperService.get_data_by_index_sector(self.index,self.sector))
+        save_data_to_redis(data,self.key)
+        return data
 
     def update_avg_metric_dic(self,sector):
-        if sector == 'Any':
-            df = bigQuery.get_average_metric()
+        df = SourceDataMapperService.get_avg_metric_df()
+        if sector != 'Any':
+            df = df[df['Sector'] == sector]  # Filter where Sector value is sector
+            df = df.drop(columns = ['Sector'])
+            df = df.astype(float)
+            df = df.squeeze() # to convert it to series 
+            self.avg_metric_df = df
+        else:
             df = df.drop(columns = ['Sector'])
             df = df.astype(float)
             df = df.mean(axis=0)
             self.avg_metric_df = df.astype(float)
-        else:
-           df = bigQuery.get_average_metric_by_sector(sector)
-           df = df.drop(columns = ['Sector'])
-           df = df.astype(float)
-           df = df.squeeze() # to convert it to series 
-           self.avg_metric_df = df
+        self.avg_metric_df = df
         return self.avg_metric_df
  
    # we can use return_risk_ratio as a multiplier instead of addition. There is a possibility 
    #of calculating the coefficient of each of these attributes so that we give more weights to more relevant attribute
+   # apply AI or ML to calculate the coefficient
     def calculate_strength_value(self, df, stock_type):
-        attributes = ["dividend","pe","fpe","pb","beta","return_risk_ratio"]
+        logging.info(f"Calculating strength value for {stock_type} Stock")     
+        attributes = ["dividend","pe","fpe","pb","beta" ] #,"return_risk_ratio"] remove after annaul return is fixed
         df["strength"] = 0
         for col in attributes:
             df[col].replace('nan', np.nan, inplace=True)
@@ -87,7 +92,7 @@ class stock():
             raise ValueError("Stock Type must be Value or Growth")
         df = df.replace(np.nan,0)
         df = np.round(df, decimals=3) 
-        df = df.sort_values(by=["strength","expected_annual_return"], ascending=[False,False])
+        df = df.sort_values(by=["strength"] , ascending=[False])   
         return df
     
     def get_risk_tolerance_data(self,risk_tolerance,df):
@@ -99,25 +104,28 @@ class stock():
             df = df[(df['expected_annual_risk'].astype(float) > .15) &(df['expected_annual_risk'].astype(float) < .4)]
         return df
 
+    # we can cache this data 
     def combine_with_return_data(self,df):
-        return_rate = bigQuery.get_annual_return()
+        return_rate = get_annual_return_data()
         combined_data = pd.merge(df, return_rate, on='Ticker', how='inner')
         combined_data = np.round(combined_data, decimals=3)
         return combined_data
     
     def update_strength_data(self,sector,index,stock_type):
-        sector_index_data = self.get_stock_data_by_sector_and_index(index,sector)
+        sector_index_data = SourceDataMapperService.get_data_by_index_sector(sector,index)
+        sector_index_data = self.update_with_return_data(sector_index_data)
         self.update_avg_metric_dic(sector)
         strength_calculated_df = self.calculate_strength_value(sector_index_data,stock_type)
-        strength_calculated_df  = strength_calculated_df.fillna(0)
+        #strength_calculated_df  = strength_calculated_df.fillna(0)
         return strength_calculated_df
-
-    @cached(cache)
-    def cache_sp500_data(self): # need to research whether storing the value in class is more effecient vs using pickle
-        #if self.sp500_data.empty:
-        self.sp500_data = self.get_stock_data_by_sector_and_index(sector = 'Any', index='S&P 500')
-        return self.sp500_data
     
+    def update_key_sector_and_index(self,sector,index):
+        index_key = index.replace(" ", "_")
+        sector_key = sector.replace(" ", "_")
+        self.key = f"{index_key}_{sector_key}_screen_data"
+        self.index = index
+        self.sector = sector
+          
     def get_title(self):
         return "{index} {sector} Data".format(sector = self.sector, index =self.index)
 

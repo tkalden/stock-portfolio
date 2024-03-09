@@ -1,5 +1,7 @@
 import numpy as np
+
 import enums.enum as enum
+
 
 def get_stock_dict(ticker_list):
     return {"label": "stock", "title": "Stock1", "ticker_list": ticker_list}
@@ -33,9 +35,9 @@ def get_optimization_parameters():
              "title": "Expected Return (%)", "placeholder": "Enter Expected Return"}]
 
 def get_pickle_file():
-    return {"dividend":"./pickleFiles/dividendchart.pkl",
-            "value":"./pickleFiles/valuechart.pkl",
-            "growth":"./pickleFiles/growthchart.pkl",
+    return {"dividend":"./pickleFiles/dividend_chart.pkl",
+            "value":"./pickleFiles/value_chart.pkl",
+            "growth":"./pickleFiles/growth_chart.pkl",
             "stock":"./pickleFiles/stock.pkl",
             "screener":"./pickleFiles/screener.pkl",
             "portfolio":"./pickleFiles/portfolio.pkl"
@@ -73,10 +75,12 @@ def risk():
     return ['High', 'Medium', 'Low']
 
 
-def round_decimal_place(df,roundArray):
-        for a in roundArray:
+def round_decimal_place(df,_round_array):
+        for a in _round_array:
             df[a] = np.round(df[a].astype(float), decimals = 3)
         return df
+
+
 
 
 

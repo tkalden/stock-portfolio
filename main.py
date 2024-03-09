@@ -1,15 +1,19 @@
-from flask import Blueprint
+import logging
+import threading
+from threading import Thread
+
+import pandas as pd
+from flask import Blueprint, flash, render_template, request
+from flask_login import current_user, login_required
+
+import enums.enum as enum
 import methods.news as news
-from methods.stock import stock
+import utilities.helper as helper
+from __init__ import create_app
 from methods.chart import chart
 from methods.portfolio import portfolio as buildPortfolio
-import utilities.helper as helper
-import enums.enum as enum
-from flask import render_template, request,flash
-import pandas as pd
-from __init__ import create_app
-from flask_login import current_user,login_required
-import logging
+from methods.sourceDataMapper import SourceDataMapperService
+from methods.stock import stock
 
 main = Blueprint('main', __name__)
 
@@ -33,14 +37,13 @@ def screener():
     if request.form["btn"]=="Search":
         sector = request.form.get('sector')
         index = request.form.get('index')
-        data = stock.get_stock_data_by_sector_and_index(sector = sector, index=index)
-        stock.save_screener_data(data)
+        stock.update_key_sector_and_index(sector = sector, index=index)
  return render_template('screener.html', index_sector_lists = helper.index_sector(), title = stock.get_title())
 
 @main.route('/portfolio', methods=["GET","POST"])
 @login_required
 def build():
-    stock_data = stock.cache_sp500_data()
+    stock_data = stock.get_sp500_data()
     ticker_list = sorted(list(set(stock_data["Ticker"])))
     total_portfolio_return = 0
     total_portfolio_risk = 0
@@ -56,7 +59,7 @@ def build():
         elif request.form["btn"]=="Save Portfolio":
              portfolio = buildPortfolio.get_build_porfolio()
              if not portfolio.empty:
-                app.logger.info(f'Saving portfolio Data %',portfolio)
+                app.logger.info('Saving portfolio Data %',portfolio)
                 buildPortfolio.save_portfolio_data(portfolio,current_user.id)
                 flash('Successfully Saved Porfolio')
         total_portfolio_return = round(buildPortfolio.calculate_portfolio_return(portfolio),2)
@@ -84,20 +87,20 @@ def build_portfolio_data():
     return {'data': buildPortfolio.get_build_porfolio().to_dict('records')}
 
 @main.route('/value-chart')
-def valueChart():
-    charts = chart.get_chart_data(enum.StockType.VALUE.value,enum.Metric.STRENGTH.value)
+def value_chart():
+    charts = chart.get_chart_data(enum.StockType.VALUE.value)
     return render_template('chart.html',charts = charts,title= "Top Value Stocks" )
 
 @main.route('/growth-chart')
-def growthChart():
-    charts = chart.get_chart_data(enum.StockType.GROWTH.value, enum.Metric.STRENGTH.value)
+def growth_chart():
+    charts = chart.get_chart_data(enum.StockType.GROWTH.value)
     return render_template('chart.html',charts = charts, title= "Top Growth Stocks")
 
 @main.route('/dividend-chart')
-def dividendChart():
-    charts = chart.get_chart_data(enum.StockType.NONE.value, enum.Metric.DIVIDEND.value)
+def dividend_chart():
+    charts = chart.get_chart_data(enum.StockType.DIVIDEND.value)
     return render_template('chart.html',charts = charts, title= "Top Dividend Stocks" )
 
 app = create_app() # we initialize our flask app using the __init__.py function
 if __name__ == '__main__':
-    app.run(debug=True) # run the flask app on debug mode
+    app.run(debug=True, use_reloader=False) # we run our app in debug mode

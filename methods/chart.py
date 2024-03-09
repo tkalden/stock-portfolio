@@ -1,46 +1,44 @@
-import utilities.helper as helper
-import enums.enum as enum
-import pandas as pd
-from methods.stock import stock
-from utilities.pickle import pickle
-from cachetools import cached, TTLCache
+import logging
 
+import pandas as pd
+
+import enums.enum as enum
+from methods.sourceDataMapper import SourceDataMapperService
+from methods.stock import stock
+from utilities.constant import SECTORS
+from utilities.pickle import pickle
 
 pickle = pickle()
 stock = stock()
-cache = TTLCache(maxsize=1000, ttl=86400)
+SourceDataMapperService = SourceDataMapperService()
 
 class chart():
      # init method or constructor
     def __init__(self):
-        self.top_dict = []
+        self.index = 'S&P 500' #default
+        self.sectors = SECTORS
  
-    @cached(cache)
-    def get_chart_data(self,stock_type,base_metric):
-        sp_500_data = stock.cache_sp500_data()
-        df = sp_500_data
-        if base_metric == enum.Metric.STRENGTH.value:
-            stock.update_avg_metric_dic('Any')
-            df = stock.calculate_strength_value(df,stock_type)
-        elif base_metric == enum.Metric.DIVIDEND.value:
-            df = df.sort_values(by="dividend", ascending=False)
-        return self.top_stocks(df,base_metric)
-       
-    def top_stocks(self,df,base_metric):
-        self.top_dict = []
-        sectors = helper.get_sector()
-        sectors.remove('Any')
-        for sector in sectors:
-            new_df = df[df['Sector'] == sector].head(5)
-            labels = new_df["Ticker"].values.tolist()
+    def get_chart_data(self,stock_type):
+        logging.info(f"Getting chart data for {stock_type} Stock")
+        stock.update_avg_metric_dic('Any') #first find the average values across all the sectors for SP500
+        top_dict = []
+        for sector in self.sectors:
             chart_values = pd.DataFrame()
-            if base_metric == enum.Metric.STRENGTH.value:
-                chart_values = new_df["strength"]
-            elif base_metric == enum.Metric.DIVIDEND.value:
-                chart_values = new_df["dividend"] 
-            values = chart_values.values.tolist()
-            self.top_dict.append({"id": sector, "values":values, "labels":labels, "title": sector})
-        return self.top_dict
+            labels = []
+            data = SourceDataMapperService.get_data_by_index_sector(self.index,sector)
+            if stock_type == enum.StockType.GROWTH.value or stock_type == enum.StockType.VALUE.value:
+                strength_data = stock.calculate_strength_value(data,stock_type).head(5)
+                labels = strength_data["Ticker"]
+                chart_values = strength_data["strength"]
+            elif stock_type == enum.StockType.DIVIDEND.value:
+                dividend_data = data.sort_values(by="dividend", ascending=False).head(5)
+                labels = dividend_data["Ticker"]
+                chart_values = dividend_data["dividend"]
+            values = chart_values.tolist()
+            labels= labels.tolist()
+            top_dict.append({"id": sector, "values":values, "labels":labels, "title": sector})
+        return top_dict
+    
     
 
     

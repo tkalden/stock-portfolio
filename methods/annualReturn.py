@@ -1,23 +1,29 @@
-from pandas_datareader import data
-import pandas as pd
-import math
 import asyncio
-import utilities.bigQuery as bigQuery
 import logging
+import math
+
+import pandas as pd
+from pandas_datareader import data
+
+from methods.sourceDataMapper import SourceDataMapperService
+from utilities.redis import (check_data_from_redis, fetch_data_from_redis,
+                             save_data_to_redis)
+
 logger_format = '%(asctime)s:%(threadName)s:%(message)s'
 logging.basicConfig(format=logger_format, level=logging.INFO, datefmt="%H:%M:%S")
 
+SourceDataMapperService = SourceDataMapperService()
 
 async def get_result(n):
     logging.info(f"Start Task {n}")
     df = await get_annual_return(n)
-    bigQuery.write_to_bigquery(df,'stockdataextractor.stock.annual-return')
     logging.info(f"End Task {n}")
     return df
 
 async def gather_result(ticker_lists):
    logging.info("Main started")
    return await asyncio.gather(*[get_result(n) for n in zip(*(iter(ticker_lists),) * 10)])
+
 
 async def get_annual_return(ticker_lists):
     # We would like all available data from 01/01/2000 until 12/31/2016.
@@ -45,8 +51,14 @@ async def get_annual_return(ticker_lists):
     df = df.rename(columns = {'Symbols':'Ticker'})
     return df
 
-if __name__ == "__main__":
-    df1 = bigQuery.get_stock_data('S&P 500', 'Any')
-    ticker_lists = df1['Ticker']
+def get_annual_return_data():
+    key = 'annual-return'
+    if check_data_from_redis(key):
+        return fetch_data_from_redis(key)
+    df1 = SourceDataMapperService.get_data_by_index('S&P 500')
+    ticker_lists = df1['Ticker'].tolist()
     logging.info(f"Ticker List {ticker_lists}")
-    asyncio.run(gather_result(ticker_lists))
+    df = pd.concat(asyncio.run(gather_result(ticker_lists)),axis = 0)
+    save_data_to_redis(df,'annual_return')
+    return data
+

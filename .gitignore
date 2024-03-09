@@ -26,3 +26,4 @@ __pycache__/
 *$py.class
 
 .DS_store
+dump.rdb

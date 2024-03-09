@@ -4,12 +4,10 @@ pandas
 numpy
 asyncio
 flask_toastr
-finvizfinance
-google-cloud-bigquery
 db-dtypes
 seaborn
 pandas_datareader
 flask-login
 werkzeug==2.2.2
-cachetools
-google-reauth
+redis
+schedule
