@@ -1,40 +1,42 @@
 from flask import Flask
-from flask_toastr import Toastr
 from flask_login import LoginManager
-from utilities.model import User 
+from flask_cors import CORS
+import os
 
+login_manager = LoginManager()
 
 def create_app():
     app = Flask(__name__)
-
-    toastr = Toastr()
-
-    config = {
-        "SECRET_KEY": "e0af172472bfdc4bc8292763f86e3abe0e2eb9a8cf68d12f"
-    }
-
-    app = Flask(__name__)
-    app.config.from_mapping(config)
-    toastr.init_app(app)
-
-      # The login manager contains the code that lets your application and Flask-Login work together
-    login_manager = LoginManager() # Create a Login Manager instance
-    login_manager.login_view = 'auth.login' # define the redirection path when login required and we attempt to access without being logged in
-    login_manager.init_app(app) # configure it for login
-
-
+    
+    # Configure CORS for React frontend (stocknity-ui)
+    CORS(app, origins=['http://localhost:3000', 'http://localhost:3001'], supports_credentials=True)
+    
+    # Configuration
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+    app.config['REDIS_HOST'] = os.environ.get('REDIS_HOST', 'localhost')
+    app.config['REDIS_PORT'] = int(os.environ.get('REDIS_PORT', 6379))
+    app.config['REDIS_DB'] = int(os.environ.get('REDIS_DB', 0))
+    
+    # Initialize extensions
+    login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Please log in to access this page.'
+    login_manager.login_message_category = 'info'
+    
     @login_manager.user_loader
-    def load_user(user_id): #reload user object from the user ID stored in the session
-        user = User.get(user_id)
-        print('User', user)
-        return user
-
-    # blueprint for auth routes in our app
-    from auth import auth as auth_blueprint
-    app.register_blueprint(auth_blueprint)
-
-    # blueprint for non-auth parts of app
-    from main import main as main_blueprint
-    app.register_blueprint(main_blueprint)
-
+    def load_user(user_id):
+        from utilities.model import User
+        return User.get(user_id)
+    
+    # Import and register blueprints
+    from auth import auth
+    app.register_blueprint(auth)
+    
+    from main import main
+    app.register_blueprint(main)
+    
+    # Start the data scheduler
+    from scheduler import data_scheduler
+    data_scheduler.start_scheduler()
+    
     return app

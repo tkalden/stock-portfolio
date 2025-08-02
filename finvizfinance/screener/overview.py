@@ -263,7 +263,6 @@ class Overview:
         return url
 
     def _fetch_soup(self, url):
-        print("URL === ", url)
         soup = web_scrap(url)
         return soup
 

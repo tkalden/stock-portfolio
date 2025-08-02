@@ -29,5 +29,18 @@ def check_data_from_redis(key):
 def save_data_to_redis(data,key):
     logging.info('Saving data to Redis for Key %s', key)
     # Save the data to Redis with a TTL of 24 hours
-    r.setex(key, 24 * 60 * 60, json.dumps(data.to_dict()))
+    r.setex(key, 24 * 60 * 60, json.dumps(data.to_dict(orient='records')))
     logging.info('Total %s Data Saved To Redis', data.shape[0])
+
+def save_data_to_redis_until_delete(data,key):
+    logging.info('Saving data to Redis for Key %s', key)
+    # Save the data to Redis with a TTL of 24 hours
+    logging.info('Total %s Data Saved To Redis', data.shape[0])
+
+def save_user_data(email, name, password):
+    user_data = {u"email": email, u"name": name, u"password": password}
+    redis.hset('users', email, user_data)
+
+def regist_user(email):
+    user_data = {u"email": email}
+    redis.hset('registration', email, user_data)

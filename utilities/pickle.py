@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import logging
 import utilities.helper as helper
-import utilities.bigQuery as bigQuery
+from utilities.redis_data import redis_manager
 
 logging.basicConfig(level = logging.INFO)
 
@@ -24,4 +24,7 @@ class pickle():
         return result
     
     def save_data(self, df, table_id):
-         return bigQuery.write_to_bigquery(df,table_id)
+        """Save data to Redis instead of BigQuery"""
+        logging.info('Saving data to Redis')
+        # For now, save to a generic key - you might want to parse table_id
+        return redis_manager.save_stock_data(df, "default", "default")

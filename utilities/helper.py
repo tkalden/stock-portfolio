@@ -76,9 +76,10 @@ def risk():
 
 
 def round_decimal_place(df,_round_array):
-        for a in _round_array:
+    for a in _round_array:
+        if a in df.columns:
             df[a] = np.round(df[a].astype(float), decimals = 3)
-        return df
+    return df
 
 
 

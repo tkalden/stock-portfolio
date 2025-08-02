@@ -1,118 +1,93 @@
-from google.cloud import bigquery
 import logging
+import pandas as pd
+from utilities.redis_data import redis_manager
+
 logging.basicConfig(level=logging.INFO)
 
-
-client = bigquery.Client()
-
-def write_to_bigquery(df,table_id):
-    logging.info('Saving data')
-    client.load_table_from_dataframe(df, table_id)
-
+def write_to_bigquery(df, table_id):
+    """Save data to Redis (replacing BigQuery)"""
+    logging.info('Saving data to Redis')
+    # For now, we'll save to a generic key based on table_id
+    # In a more sophisticated implementation, you might want to parse table_id
+    return redis_manager.save_stock_data(df, "default", "default")
 
 def get_stock_data(index, sector):
-    logging.info( 'Getting Stock data for Sector %s  and Index  %s ', sector, index)
-    query_parameters = [bigquery.ScalarQueryParameter("index", "STRING", index),
-    bigquery.ScalarQueryParameter("sector", "STRING", sector)] 
-    return run_query(get_query(index,sector),query_parameters)
+    """Get stock data from Redis"""
+    logging.info(f'Getting Stock data for Sector {sector} and Index {index}')
+    return redis_manager.get_stock_data(index, sector)
 
-def run_query(query,query_parameters):
-    job_config = bigquery.QueryJobConfig(
-            query_parameters= query_parameters
-        )
-    query_job = client.query(query, job_config=job_config)
-    return query_job.to_dataframe()
+def run_query(query, query_parameters):
+    """Placeholder for query functionality - not needed with Redis"""
+    logging.warning("Query functionality not implemented for Redis - returning empty DataFrame")
+    return pd.DataFrame()
 
 def get_average_metric_by_sector(sector):
-    logging.info( 'Getting Average metric data for Sector %s', sector)      
-    query = """
-            SELECT *
-            FROM  `stockdataextractor.stock.average-metric`
-            WHERE
-            Sector = @sector 
-             """
-    query_parameters = [bigquery.ScalarQueryParameter("sector", "STRING", sector)]
-    return run_query(query,query_parameters)
+    """Get average metrics by sector from Redis"""
+    logging.info(f'Getting Average metric data for Sector {sector}')
+    df = redis_manager.get_average_metrics()
+    if not df.empty and 'Sector' in df.columns:
+        return df[df['Sector'] == sector]
+    return pd.DataFrame()
 
 def get_portfolios_by_user_id(user_id):
-    query = """
-    SELECT * FROM `stockdataextractor.stock.portfolio-table` t
-    WHERE t.user_id = @user_id
-     """
-    query_parameters = [bigquery.ScalarQueryParameter("user_id", "STRING", user_id)]
-    return run_query(query,query_parameters)
+    """Get portfolios by user ID from Redis"""
+    portfolios = redis_manager.get_portfolios_by_user_id(user_id)
+    if portfolios:
+        # Convert to DataFrame format expected by the application
+        all_records = []
+        for portfolio in portfolios:
+            if 'data' in portfolio:
+                for record in portfolio['data']:
+                    record['portfolio_id'] = portfolio['portfolio_id']
+                    record['user_id'] = portfolio['user_id']
+                    all_records.append(record)
+        return pd.DataFrame(all_records)
+    return pd.DataFrame()
 
-def get_user_by_id_and_pw(user_id,password):
-    query = """
-    SELECT * FROM `stockdataextractor.stock.user-table` t
-    WHERE t.user_id = @user_id
-    AND t.password = @password
-     """
-    query_parameters = [bigquery.ScalarQueryParameter("user_id", "STRING", user_id),bigquery.ScalarQueryParameter("password", "STRING", password)]
-    return run_query(query,query_parameters)
+def get_user_by_id_and_pw(user_id, password):
+    """Authenticate user with Redis"""
+    user = redis_manager.authenticate_user(user_id, password)
+    if user:
+        return pd.DataFrame([user])
+    return pd.DataFrame()
 
 def get_subscription_by_id(email):
-    query = """
-    SELECT * FROM `stockdataextractor.stock.subscription-table` t
-    WHERE t.email = @email
-     """
-    query_parameters = [bigquery.ScalarQueryParameter("email", "STRING", email)]
-    return run_query(query,query_parameters)
+    """Get subscription by email from Redis"""
+    subscription = redis_manager.get_subscription_by_email(email)
+    if subscription:
+        return pd.DataFrame([subscription])
+    return pd.DataFrame()
 
 def get_user_by_id(email):
-    query = """
-    SELECT * FROM `stockdataextractor.stock.user-table` t
-    WHERE t.email = @email
-     """
-    query_parameters = [bigquery.ScalarQueryParameter("email", "STRING", email)]
-    return run_query(query,query_parameters)
+    """Get user by email from Redis"""
+    user = redis_manager.get_user_by_email(email)
+    if user:
+        return pd.DataFrame([user])
+    return pd.DataFrame()
 
 def get_portfolio_by_id(portfolio_id):
-    query = """
-    SELECT * FROM `stockdataextractor.stock.portfolio-table` t
-    WHERE t.portfolio_id = @portfolio_id
-     """
-    query_parameters = [bigquery.ScalarQueryParameter("portfolio_id", "STRING", portfolio_id)]
-    return run_query(query,query_parameters)
- 
+    """Get portfolio by ID from Redis"""
+    # This would need to be implemented in RedisDataManager
+    logging.warning("get_portfolio_by_id not implemented for Redis")
+    return pd.DataFrame()
+
 def get_average_metric():
-    query = """
-            SELECT *
-            FROM  `stockdataextractor.stock.average-metric` 
-             """
-    return run_query(query,query_parameters = [])
+    """Get all average metrics from Redis"""
+    return redis_manager.get_average_metrics()
 
 def get_annual_return():
-    query = """
-            SELECT *  FROM `stockdataextractor.stock.annual-return` 
-             """
-    return run_query(query,query_parameters = [])
+    """Get annual returns from Redis"""
+    return redis_manager.get_annual_returns()
 
-def get_query(index,sector):
-    query = ""
-    if sector == 'Any' and index != 'Any':
-        query = """
-            SELECT *
-            FROM  `stockdataextractor.stock.screen-data`
-            WHERE
-            Index = @index 
-            ORDER BY Ticker DESC
-            LIMIT 1000 """
-    else:
-       query = """
-            SELECT *
-            FROM  `stockdataextractor.stock.screen-data`
-            WHERE
-            Index = @index AND
-            Sector = @sector
-            ORDER BY Ticker DESC
-            LIMIT 1000 """
-    return query
+def get_query(index, sector):
+    """Placeholder for query generation - not needed with Redis"""
+    return ""
 
-def insert_rows(table_id,rows_to_insert):
-    table = client.get_table(table_id)
-    errors = client.insert_rows_json(table, rows_to_insert)  # Make an API request.
-    if errors == []:
-        logging.debug("New rows have been added.")
-    else:
-        logging.error("Encountered errors while inserting rows: {}".format(errors))
+def insert_rows(table_id, rows_to_insert):
+    """Insert rows into Redis (replacing BigQuery)"""
+    logging.info('Inserting rows into Redis')
+    # Convert rows to DataFrame and save
+    if rows_to_insert:
+        df = pd.DataFrame(rows_to_insert)
+        return redis_manager.save_stock_data(df, "default", "default")
+    return False

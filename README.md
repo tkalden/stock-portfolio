@@ -1,161 +1,232 @@
-# Portfolio Investment
+# Stocknity API Server
 
-The goal of this project is to build a simple Flask application that pulls stock data from Finviz and returns best Value or Growth Stocks for different choice of Sector or Index. The application also allows users to pick the stocks and returns optimal portofio based on their selections.
+A Flask-based REST API server for stock portfolio management and analysis. This is the backend API that powers the Stocknity frontend application.
 
-## Table of Contents
+## Features
 
-- [Portfolio Investment](#portfolio-investment)
-  - [Table of Contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Contributing](#contributing)
-  - [License](#license)
+- **Stock Data Management**: Fetch and cache stock data from Finviz
+- **Portfolio Optimization**: Build and optimize stock portfolios using various algorithms
+- **User Management**: User registration, authentication, and portfolio persistence
+- **Redis Caching**: Fast data access with Redis caching layer
+- **Scheduled Data Updates**: Daily data refresh at 8 AM
+- **RESTful API**: Clean API endpoints for frontend integration
 
+## Tech Stack
 
-## Installation
+- **Backend**: Flask (Python)
+- **Database**: Redis (for caching and data storage)
+- **Authentication**: Flask-Login
+- **Data Processing**: Pandas, NumPy
+- **Stock Data**: FinvizFinance
+- **Scheduling**: Python schedule library
+- **Containerization**: Docker & Kubernetes ready
 
-1. Clone the repository:
+## API Endpoints
 
+### Authentication
+- `POST /api/login` - User login
+- `POST /api/signup` - User registration
+- `POST /api/logout` - User logout
+- `POST /api/subscribe` - Newsletter subscription
+
+### User Management
+- `GET /api/profile` - Get user profile (requires authentication)
+
+### Stock Data
+- `GET /api/home` - Get news and home page data
+- `GET /api/screener/data` - Get stock screener data
+- `POST /api/screener` - Update screener filters
+
+### Portfolio Management
+- `GET /api/portfolio/data` - Get current portfolio data
+- `POST /api/portfolio` - Build/Optimize/Save portfolios
+- `GET /api/my-portfolio/data` - Get user's saved portfolios
+- `POST /api/delete-portfolio/<portfolio_id>` - Delete a portfolio
+- `POST /api/clear-built-portfolio` - Clear current built portfolio
+
+### Charts
+- `GET /api/chart/<chart_type>` - Get chart data (value/growth/dividend)
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.8+
+- Redis server
+- Docker (optional)
+
+### Installation
+
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/tkalden/stock-portfolio.git
-
-2. Navigate to the project directory:
-  
-   ```bash
+   git clone <repository-url>
    cd stock-portfolio
+   ```
 
-3. Create and activate a virtual environment (optional but recommended):
-  
+2. **Create virtual environment**
    ```bash
-    # On Windows
-    python -m venv venv
-    .\venv\Scripts\activate
-    # On macOS and Linux
-    python3 -m venv venv
-    source venv/bin/activate
+   python -m venv venv
+   source venv/bin/activate 
+   ```
 
-4. Install the dependencies from the requirements.txt file:
-  
+3. **Install dependencies**
    ```bash
    pip install -r requirements.txt
+   ```
 
-
-5. Set the Flask app name (if not named app.py):
-  
+4. **Set up Redis**
    ```bash
-   # On Windows
-    set FLASK_APP=main.py
-   # On macOS and Linux
-   export FLASK_APP=main.py
+   # Using Docker
+   docker run -d -p 6379:6379 redis:alpine
+   
+   # Or install Redis locally
+   # Follow Redis installation guide for your OS
+   ```
 
-6. Set python path 
-
+5. **Configure environment variables**
    ```bash
-   # On macOS and Linux
-   export PYTHONPATH=/path/to/project
+   export SECRET_KEY="your-secret-key-here"
+   export REDIS_HOST="localhost"
+   export REDIS_PORT="6379"
+   export REDIS_DB="0"
+   ```
 
-7. Run the Flask app:
-  
+### Running the Application
+
+1. **Start the Flask server**
    ```bash
-   flask run
+   python app.py
+   ```
 
-8. In order to run google api used in this app, you need to set up local credentials using following link.Otherwise you will get errors when clicking on pages.
-   https://cloud.google.com/docs/authentication/provide-credentials-adc#local-dev
+2. **Access the API**
+   - API will be available at `http://localhost:5001`
+   - Health check: `GET http://localhost:5001/`
 
-## Usage
-User can choose : Sector , Index and choice of investement (Growth vs. Value).
-The application returns the stocks for that particular user inputs in descending order of strength.
-User can select stocks returned from the application and build portfolio out of them. The optimization method will take care of returning best portfolio.
+### Docker Deployment
 
-### Data Dictionary
-``` 
-{"P/E": "pe", 
-"Fwd P/E" : "fpe",
-"P/B": "pb", 
-"P/C":"pc", 
-"Dividend":"dividend", 
-"PEG" : "peg",
-"Insider Own" : "insider_own", 
-"ROI":"roi",
-"ROE":"roe",
-"Beta" : "beta",
-"Price" :"price"
-}
-```
+1. **Build the Docker image**
+   ```bash
+   docker build -t stocknity-api .
+   ```
 
-### Strength Calculation
-#### Value Stock
-```
- if pb or pe or pc or fpe or peg  < avg value of sector
-   strength =+1
- elif beta < 1
-    strength =+1
- elif dividend > avg div
- strength =+1
-```
-#### Growth Stock
+2. **Run with Docker Compose**
+   ```bash
+   docker-compose up -d
+   ```
 
-```
- if pb or pe or pc or fpe or peg  > avg value of sector
-   strength =+1
- elif beta > 1
-    strength =+1
- elif dividend < avg div
- strength =+1
-```
-### Weight Calculation
+## API Usage Examples
 
-```
-weight_{i} = strength_value_{i} / sum (strength_value) across all stocks
-
-```
-### Expected Return (ER) Calculation
-```
-ER_{i} = weight_{i} * roi_{i}
+### User Registration
+```bash
+curl -X POST http://localhost:5001/api/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "name": "John Doe",
+    "password": "SecurePass123!",
+    "confirm": "SecurePass123!"
+  }'
 ```
 
-### Portfolio Total Return (PTR) Calculation 
-```
-TPR = sum (ER_{i}) for i = 1..n  where n is the total number of stocks in the portoflio
-```
-
-### Optimization Method:
-Given the user provide desired expected return and threshold.The optimization Method returns the best portfolio by optimizing TPR.
-Note: sometimes the expected return can be less than desired expected return. However the algorithm returns the maximum expected return for the different combination of stocks
-
-## Further Analysis
-For greater certainty about a stock's prospects, it's important to use a company's EPS Rating in conjunction with its Composite Rating, Relative Strength Rating and Accumulation/Distribution score. 
-The expected return is oversimplified. The better approach is to analyze the expected return of each stock over the past 5 years and take statistical average. 
-```
-ER_{i} = Sum(ER_{j}) / n for j = 1..n  where n is total number of years
-```
-```
-PR_{i} = weight_{i} * ER_{i} 
-```
-```
-TPR = sum(PR_{i})  for i = 1..n  where n = total number of stocks
+### User Login
+```bash
+curl -X POST http://localhost:5001/api/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePass123!"
+  }'
 ```
 
-## Dependencies
+### Get Stock Data
+```bash
+curl http://localhost:5001/api/screener/data
 ```
-List the dependencies required by your Flask app. You can generate this list from the requirements.txt file:
+
+### Build Portfolio
+```bash
+curl -X POST http://localhost:5001/api/portfolio \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "btn=Build&sector=Technology&index=S&P 500&stock_type=value&investing_amount=10000&max_stock_price=100&risk_tolerance=medium"
+```
+
+## Data Flow
+
+1. **Scheduled Data Fetching**: Daily at 8 AM, the scheduler fetches:
+   - Stock data from Finviz
+   - Annual returns and risk data
+   - Strength calculations for all stocks
+
+2. **Redis Caching**: All data is cached in Redis for fast access
+
+3. **Portfolio Operations**: 
+   - Build portfolios using top stocks or custom selections
+   - Optimize portfolios based on risk tolerance and return expectations
+   - Save portfolios to Redis (persistent, no TTL)
+   - Delete portfolios on demand
+
+## Development
+
+### Project Structure
+```
+stock-portfolio/
+├── app.py                 # Main application entry point
+├── __init__.py           # Flask app factory
+├── main.py               # Main API routes
+├── auth.py               # Authentication routes
+├── services/             # Business logic services
+│   ├── portfolio.py      # Portfolio management
+│   ├── screener.py       # Stock screening
+│   ├── chart.py          # Chart data
+│   └── ...
+├── utilities/            # Utility functions
+│   ├── redis_data.py     # Redis data manager
+│   ├── userFunction.py   # User CRUD operations
+│   └── ...
+├── scheduler.py          # Data scheduling
+└── requirements.txt      # Python dependencies
+```
+
+### Adding New Endpoints
+
+1. Add route in `main.py` or `auth.py`
+2. Return JSON responses using `jsonify()`
+3. Include proper error handling and status codes
+4. Add authentication decorators where needed
+
+### Testing
 
 ```bash
-pip freeze > requirements.txt
+# Test API health
+curl http://localhost:5001/
 
-Flask==2.1.0
-gunicorn==20.1.0
-pandas
-numpy
-asyncio
-flask_toastr
-finvizfinance
-google-cloud-bigquery
-db-dtypes
+# Test stock data
+curl http://localhost:5001/api/screener/data
+
+# Test with authentication
+curl -X POST http://localhost:5001/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "password123"}'
 ```
+
+## Frontend Integration
+
+This API is designed to work with the separate `stocknity-ui` React frontend. The frontend should:
+
+- Make HTTP requests to the API endpoints
+- Handle authentication with cookies/sessions
+- Display data returned in JSON format
+- Handle error responses appropriately
 
 ## Contributing
 
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
 ## License
 
+This project is licensed under the MIT License.
 
-```
