@@ -1,7 +1,62 @@
-Dockerfile
-README.md
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
 *.pyc
 *.pyo
 *.pyd
-__pycache__
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
 .pytest_cache
+.hypothesis
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+k8s/
+scripts/
+docs/
+sequenceDiagram/
+*.md
+*.log
+scheduler.log
+pyvenv.cfg
+stock-portfolio.code-workspace
+README*
+QUICK_START*
+*.drawio
+
+# Large directories that aren't needed in container
+stocknity-ui/

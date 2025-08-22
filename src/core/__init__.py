@@ -29,14 +29,14 @@ def create_app():
         return User.get(user_id)
     
     # Import and register blueprints
-    from auth import auth
+    from api.auth import auth
     app.register_blueprint(auth)
     
-    from main import main
+    from api.main import main
     app.register_blueprint(main)
     
-    # Start the data scheduler
-    from scheduler import data_scheduler
-    data_scheduler.start_scheduler()
+    # Note: Async scheduler is started via API endpoints
+    # Use /api/scheduler/start to start the background scheduler
+    # Old scheduler has been replaced with async_scheduler
     
     return app

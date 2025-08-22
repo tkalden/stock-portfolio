@@ -53,8 +53,26 @@ class RedisDataManager:
                 'timestamp': self._get_timestamp(),
                 'count': len(df)
             }
-            # Save with 24-hour TTL
-            self.r.setex(key, 24 * 60 * 60, json.dumps(data))
+            # Save with 7-day TTL for screener data (weekly updates)
+            self.r.setex(key, 7 * 24 * 60 * 60, json.dumps(data))
+            
+            # Track the data save
+            try:
+                from utilities.redis_tracker import redis_tracker, DataType, APISource
+                redis_tracker.track_data_save(
+                    key=key,
+                    data_type=DataType.STOCK_DATA,
+                    source=APISource.FINVIZ,  # This will be overridden by the caller
+                    index=index,
+                    sector=sector,
+                    record_count=len(df),
+                    size_bytes=len(json.dumps(data)),
+                    ttl_seconds=7 * 24 * 60 * 60  # 7 days
+                )
+            except Exception as e:
+                logging.warning(f"Failed to track stock data save: {e}")
+                # Continue without tracking - don't fail the save operation
+            
             logging.info(f"Saved stock data for {index}:{sector} with {len(df)} records")
             return True
         except Exception as e:
@@ -63,6 +81,53 @@ class RedisDataManager:
     
     def get_stock_data(self, index: str, sector: str) -> pd.DataFrame:
         """Get stock data from Redis"""
+        if not self.available:
+            logging.warning("Redis not available - returning empty DataFrame")
+            return pd.DataFrame()
+        
+        try:
+            key = f"stock_data:{index}:{sector}"
+            data = self.r.get(key)
+            if data:
+                data_dict = json.loads(data)
+                
+                # Check data freshness (7 days TTL for screener data)
+                timestamp = datetime.fromisoformat(data_dict['timestamp'])
+                age_hours = (datetime.now() - timestamp).total_seconds() / 3600
+                
+                if age_hours > 168:  # Data is stale (older than 7 days)
+                    logging.info(f"Stock data for {index}:{sector} is stale ({age_hours:.1f} hours old)")
+                    return pd.DataFrame()  # Return empty to trigger fresh fetch
+                
+                df = pd.DataFrame(data_dict['data'])
+                
+                # Add back the Sector column if it's missing
+                if 'Sector' not in df.columns and sector != 'Any':
+                    logging.info(f"Adding Sector column for {index}:{sector}")
+                    df['Sector'] = sector
+                
+                # Add back the Index column if it's missing
+                if 'Index' not in df.columns:
+                    df['Index'] = index
+                
+                # Track cache hit
+                try:
+                    from utilities.redis_tracker import redis_tracker
+                    redis_tracker.track_data_access(key)
+                except Exception as e:
+                    logging.warning(f"Failed to track stock data access: {e}")
+                
+                logging.info(f"Retrieved fresh stock data for {index}:{sector} with {len(df)} records (age: {age_hours:.1f} hours)")
+                return df
+            else:
+                logging.info(f"No stock data found for {index}:{sector}")
+                return pd.DataFrame()
+        except Exception as e:
+            logging.error(f"Error retrieving stock data: {e}")
+            return pd.DataFrame()
+    
+    def get_stock_data_any_age(self, index: str, sector: str) -> pd.DataFrame:
+        """Get stock data from Redis regardless of age (for immediate display)"""
         if not self.available:
             logging.warning("Redis not available - returning empty DataFrame")
             return pd.DataFrame()
@@ -83,13 +148,17 @@ class RedisDataManager:
                 if 'Index' not in df.columns:
                     df['Index'] = index
                 
-                logging.info(f"Retrieved stock data for {index}:{sector} with {len(df)} records")
+                # Calculate age for logging
+                timestamp = datetime.fromisoformat(data_dict['timestamp'])
+                age_minutes = (datetime.now() - timestamp).total_seconds() / 60
+                
+                logging.info(f"Retrieved cached stock data for {index}:{sector} with {len(df)} records (age: {age_minutes:.1f} minutes)")
                 return df
             else:
-                logging.info(f"No stock data found for {index}:{sector}")
+                logging.info(f"No cached stock data found for {index}:{sector}")
                 return pd.DataFrame()
         except Exception as e:
-            logging.error(f"Error retrieving stock data: {e}")
+            logging.error(f"Error retrieving cached stock data: {e}")
             return pd.DataFrame()
     
     def save_average_metrics(self, df: pd.DataFrame) -> bool:

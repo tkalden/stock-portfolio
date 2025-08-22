@@ -8,14 +8,14 @@ import yfinance as yf
 
 import utilities.helper as helper
 from enums.enum import RiskEnum
-from services.sourceDataMapper import SourceDataMapperService
+from services.data_fetcher import fetch_stock_data_sync
 from utilities.redis_data import redis_manager
 from datetime import datetime, timedelta
 
 logger_format = '%(asctime)s:%(threadName)s:%(message)s'
 logging.basicConfig(format=logger_format, level=logging.INFO, datefmt="%H:%M:%S")
 
-SourceDataMapperService = SourceDataMapperService()
+# Using new async data fetcher instead of SourceDataMapperService
 
 class AnnualReturn:
 
@@ -120,7 +120,6 @@ class AnnualReturn:
             return pd.DataFrame()
 
     def get_annual_return_data(self):
-        # Try to get from new Redis manager first
         df = redis_manager.get_annual_returns()
         
         # Check if data exists and has valid risk ranges (should include Medium risk stocks)
@@ -136,9 +135,23 @@ class AnnualReturn:
             logging.info("Annual returns not found in Redis or invalid, calculating...")
         
         # Regenerate data using real Yahoo Finance
-        df1 = SourceDataMapperService.get_data_by_index('S&P 500')
-        ticker_lists = df1['Ticker'].tolist()
-        logging.info(f"Ticker List length: {len(ticker_lists)}")
+        from services.data_fetcher import fetch_stock_data_sync
+        
+        result = fetch_stock_data_sync('S&P 500', 'Any')
+        if result.success and not result.data.empty:
+            df1 = result.data
+            logging.info(f"DF1: {df1.head()}")
+            
+            # Check if Ticker column exists
+            if 'Ticker' in df1.columns:
+                ticker_lists = df1['Ticker'].tolist()
+                logging.info(f"Ticker List length: {len(ticker_lists)}")
+            else:
+                logging.error("No Ticker column found in data")
+                return self._generate_fallback_data([])
+        else:
+            logging.error(f"Failed to fetch data: {result.error}")
+            return self._generate_fallback_data([])
         
         # Use real Yahoo Finance data instead of mock data
         logging.info("Fetching real annual returns data from Yahoo Finance...")
@@ -231,8 +244,14 @@ class AnnualReturn:
         df = np.round(df, decimals=3)
         df = df.drop_duplicates()
         df  = df.replace(np.nan,0)
-        df = df.applymap(str)
-         #the dataTable throws invalid json if the dtype is not string. Workaround solution for now
+        # Convert only string columns to strings, keep numeric columns as numbers
+        string_columns = ['Ticker', 'Sector', 'Index', 'Last_Updated', 'Earnings']
+        for col in df.columns:
+            if col in string_columns:
+                df[col] = df[col].astype(str)
+            else:
+                # Keep numeric columns as numbers
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         return df
 
     def get_risk_tolerance_data(self,risk_tolerance,df):
