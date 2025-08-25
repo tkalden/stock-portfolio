@@ -8,6 +8,7 @@ Comprehensive documentation of all data stored in Redis across different APIs an
 | ------------------- | --------------------------------------------- | ---------- | ----------------- | ------------------------- |
 | **Stock Data**      | `stock_data:{index}:{sector}`                 | 7 days     | Finviz/Yahoo      | Raw stock market data     |
 | **Strength Data**   | `strength_data:{stock_type}:{sector}:{index}` | 24 hours   | Calculated        | Processed strength scores |
+| **Chart Data**      | `chart_data:{stock_type}:{index}`             | 24 hours   | Calculated        | Pre-calculated chart data |
 | **Annual Returns**  | `annual_returns`                              | 24 hours   | Yahoo Finance     | Expected returns data     |
 | **Average Metrics** | `average_metrics`                             | 24 hours   | Calculated        | Sector average metrics    |
 | **Portfolio**       | `portfolio:{user_id}`                         | Persistent | User Created      | User portfolios           |
@@ -93,7 +94,47 @@ strength_data:value:Any:S&P 500           # Value scores for all S&P 500
 - `/api/chart/data` - Chart generation
 - `/api/portfolio` - Portfolio optimization
 
-### 3. Annual Returns (`annual_returns`)
+### 3. Chart Data (`chart_data:{stock_type}:{index}`)
+
+**Purpose**: Pre-calculated chart data for all sectors to avoid multiple API calls
+**TTL**: 24 hours (86,400 seconds)
+**Source**: Calculated from stock data using single API call
+
+**Key Patterns**:
+```
+chart_data:value:S&P 500      # Value chart data for all sectors
+chart_data:growth:S&P 500     # Growth chart data for all sectors
+chart_data:dividend:S&P 500   # Dividend chart data for all sectors
+```
+
+**Data Content**:
+```json
+[
+  {
+    "id": "Technology",
+    "values": [85.2, 78.9, 72.1, 68.5, 65.2],
+    "labels": ["AAPL", "MSFT", "GOOGL", "NVDA", "TSLA"],
+    "title": "Technology"
+  },
+  {
+    "id": "Healthcare",
+    "values": [92.1, 88.7, 85.3, 81.9, 78.4],
+    "labels": ["JNJ", "PFE", "UNH", "ABBV", "TMO"],
+    "title": "Healthcare"
+  }
+]
+```
+
+**APIs That Use This**:
+- `/api/chart/{chart_type}` - Chart endpoints (value, growth, dividend)
+- Optimized to use single cache hit instead of 11 separate API calls
+
+**Performance Impact**:
+- **Before**: 11 API calls (one per sector) = slow response
+- **After**: 1 cache hit = fast response
+- **Cache Refresh**: Daily via scheduler
+
+### 4. Annual Returns (`annual_returns`)
 
 **Purpose**: Expected annual returns and risk metrics
 **TTL**: 24 hours (86,400 seconds)
@@ -114,7 +155,7 @@ strength_data:value:Any:S&P 500           # Value scores for all S&P 500
 - All services that need return/risk data
 - Portfolio optimization
 
-### 4. Average Metrics (`average_metrics`)
+### 5. Average Metrics (`average_metrics`)
 
 **Purpose**: Sector average metrics for comparison
 **TTL**: 24 hours (86,400 seconds)
@@ -132,7 +173,7 @@ strength_data:value:Any:S&P 500           # Value scores for all S&P 500
 }
 ```
 
-### 5. Portfolio (`portfolio:{user_id}`)
+### 6. Portfolio (`portfolio:{user_id}`)
 
 **Purpose**: User-created portfolios
 **TTL**: Persistent (no expiration)
@@ -153,7 +194,7 @@ strength_data:value:Any:S&P 500           # Value scores for all S&P 500
 }
 ```
 
-### 6. User Data (`users`)
+### 7. User Data (`users`)
 
 **Purpose**: User account information
 **TTL**: Persistent
@@ -170,7 +211,7 @@ strength_data:value:Any:S&P 500           # Value scores for all S&P 500
 }
 ```
 
-### 7. Subscription (`subscriptions`)
+### 8. Subscription (`subscriptions`)
 
 **Purpose**: Newsletter subscriptions
 **TTL**: Persistent

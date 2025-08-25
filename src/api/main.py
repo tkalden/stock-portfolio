@@ -166,129 +166,6 @@ def api_stock_data():
     stock_data = screenerService.get_screener_data()
     return jsonify({'data': stock_data.to_dict('records')})
 
-@main.route('/api/screener/data/async', methods=['POST'])
-def api_screener_data_async():
-    """Async API endpoint for stock data with real-time updates"""
-    try:
-        sector = request.json.get('sector', 'Any')
-        index = request.json.get('index', 'S&P 500')
-        
-        # Update screener parameters
-        screenerService.update_key_sector_and_index(sector=sector, index=index)
-        
-        # Start async data fetching
-        def fetch_data_async():
-            try:
-                # Get data using the async fetcher
-                from services.data_fetcher import fetch_stock_data_async
-                import asyncio
-                
-                # Create event loop for async operation
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                
-                # Fetch data asynchronously
-                result = loop.run_until_complete(fetch_stock_data_async(index, sector))
-                loop.close()
-                
-                if result.success and not result.data.empty:
-                    # Update with return data
-                    from services.annualReturn import AnnualReturn
-                    annual_return = AnnualReturn()
-                    data = annual_return.update_with_return_data(result.data)
-                    return data.to_dict('records')
-                else:
-                    return []
-                    
-            except Exception as e:
-                current_app.logger.error(f"Error in async data fetching: {e}")
-                return []
-        
-        # Start the async operation in a thread
-        thread = Thread(target=fetch_data_async)
-        thread.daemon = True
-        thread.start()
-        
-        # Return initial response with status
-        return jsonify({
-            'status': 'fetching',
-            'message': f'Fetching {index} {sector} data...',
-            'data': []
-        })
-        
-    except Exception as e:
-        current_app.logger.error(f"Error in async screener: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@main.route('/api/screener/data/stream', methods=['POST'])
-def api_screener_data_stream():
-    """Stream screener data as it's fetched from Finviz in real-time"""
-    try:
-        sector = request.json.get('sector', 'Any')
-        index = request.json.get('index', 'S&P 500')
-        
-        # Update screener parameters
-        screenerService.update_key_sector_and_index(sector=sector, index=index)
-        
-        def generate():
-            try:
-                # Send initial status
-                yield f"data: {json.dumps({'status': 'started', 'message': f'Starting to fetch {index} {sector} data from Finviz...'})}\n\n"
-                
-                # Get data from screener service (this was the original working approach)
-                stock_data = screenerService.get_sp500_data()
-                
-                if stock_data.empty:
-                    yield f"data: {json.dumps({'status': 'error', 'message': 'No data available'})}\n\n"
-                    return
-                
-                # Convert to records and send
-                data_records = stock_data.to_dict('records')
-                yield f"data: {json.dumps({'status': 'completed', 'data': data_records, 'count': len(data_records), 'progress': 100})}\n\n"
-                    
-            except Exception as e:
-                # Use regular logging instead of current_app.logger
-                logger.error(f"Error in stream data fetching: {e}")
-                yield f"data: {json.dumps({'status': 'error', 'message': str(e)})}\n\n"
-        
-        return current_app.response_class(
-            generate(),
-            mimetype='text/event-stream',
-            headers={
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Cache-Control'
-            }
-        )
-        
-    except Exception as e:
-        # Use regular logging instead of current_app.logger
-        logger.error(f"Error in stream screener: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@main.route('/api/screener/data/status')
-def api_screener_data_status():
-    """Check status of async data fetching"""
-    try:
-        # For now, return cached data if available
-        stock_data = screenerService.get_sp500_data()
-        if not stock_data.empty:
-            return jsonify({
-                'status': 'completed',
-                'data': stock_data.to_dict('records'),
-                'count': len(stock_data)
-            })
-        else:
-            return jsonify({
-                'status': 'fetching',
-                'data': [],
-                'count': 0
-            })
-    except Exception as e:
-        current_app.logger.error(f"Error checking screener status: {e}")
-        return jsonify({'error': str(e)}), 500
-
 @main.route('/api/delete-portfolio/<portfolio_id>', methods=['POST'])
 @login_required
 def api_delete_portfolio(portfolio_id):
@@ -384,32 +261,6 @@ def api_chart(chart_type):
         current_app.logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
-@main.route('/api/debug/strength', methods=['GET'])
-def api_debug_strength():
-    """Debug endpoint to test strength calculator"""
-    try:
-        from services.strengthCalculator import StrengthCalculator
-        from enums.enum import StockType
-        
-        strength_calc = StrengthCalculator()
-        result = strength_calc.calculate_strength_value(StockType.VALUE.value, 'Basic Materials', 'S&P 500')
-        
-        if result.empty:
-            return jsonify({'error': 'Empty result from strength calculator'})
-        
-        return jsonify({
-            'success': True,
-            'shape': result.shape,
-            'columns': list(result.columns),
-            'sample_data': result.head(3).to_dict('records')
-        })
-    except Exception as e:
-        import traceback
-        return jsonify({
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        })
-
 @main.route('/api/cache/clear', methods=['POST'])
 def clear_cache():
     """Clear all cached data"""
@@ -428,11 +279,18 @@ def clear_cache():
             redis_manager.r.delete(*annual_keys)
             current_app.logger.info(f"Cleared {len(annual_keys)} cached annual returns keys")
         
+        # Clear chart data cache
+        chart_keys = redis_manager.r.keys("chart_data:*")
+        if chart_keys:
+            redis_manager.r.delete(*chart_keys)
+            current_app.logger.info(f"Cleared {len(chart_keys)} cached chart data keys")
+        
         return jsonify({
             'success': True,
-            'message': f'Cleared {len(keys) + len(annual_keys)} cached items',
+            'message': f'Cleared {len(keys) + len(annual_keys) + len(chart_keys)} cached items',
             'cleared_stock_keys': len(keys),
-            'cleared_annual_keys': len(annual_keys)
+            'cleared_annual_keys': len(annual_keys),
+            'cleared_chart_keys': len(chart_keys)
         })
     except Exception as e:
         current_app.logger.error(f"Error clearing cache: {e}")

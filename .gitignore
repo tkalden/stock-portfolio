@@ -58,6 +58,16 @@ dump.rdb
 .env.development.local
 .env.test.local
 .env.production.local
+env.example
+
+# Security files
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+secrets.yaml
+secrets.yml
 
 # Node.js (for frontend)
 node_modules/

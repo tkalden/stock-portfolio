@@ -21,6 +21,7 @@ class DataType(Enum):
     """Types of data stored in Redis"""
     STOCK_DATA = "stock_data"
     STRENGTH_DATA = "strength_data"
+    CHART_DATA = "chart_data"
     ANNUAL_RETURNS = "annual_returns"
     AVERAGE_METRICS = "average_metrics"
     PORTFOLIO = "portfolio"
@@ -33,6 +34,7 @@ class APISource(Enum):
     YAHOO_FINANCE = "yahoo_finance"
     CACHE = "cache"
     CALCULATED = "calculated"
+    CHART_SERVICE = "chart_service"
 
 @dataclass
 class DataEntry:

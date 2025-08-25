@@ -338,6 +338,12 @@ class AsyncScheduler:
             # Clear annual returns cache
             redis_manager.r.delete("annual_returns")
             
+            # Clear chart data cache
+            chart_keys = redis_manager.r.keys("chart_data:*")
+            if chart_keys:
+                redis_manager.r.delete(*chart_keys)
+                logger.info(f"Cleared {len(chart_keys)} chart data cache keys")
+            
             logger.info("Cache cleared successfully")
             
         except Exception as e:

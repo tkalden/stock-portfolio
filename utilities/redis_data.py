@@ -11,10 +11,29 @@ from typing import Dict, List, Optional, Any
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_DB = int(os.getenv('REDIS_DB', 0))
+REDIS_USERNAME = os.getenv('REDIS_USERNAME', None)  # Optional username
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)  # Required password for production
 
 # Initialize Redis connection
 try:
-    r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
+    if not REDIS_PASSWORD:
+        logging.warning("REDIS_PASSWORD not set - Redis connection may fail")
+    
+    # Build connection parameters
+    redis_params = {
+        'host': REDIS_HOST,
+        'port': REDIS_PORT,
+        'db': REDIS_DB,
+        'decode_responses': True
+    }
+    
+    # Add authentication if provided
+    if REDIS_USERNAME:
+        redis_params['username'] = REDIS_USERNAME
+    if REDIS_PASSWORD:
+        redis_params['password'] = REDIS_PASSWORD
+    
+    r = redis.Redis(**redis_params)
     r.ping()  # Test connection
     REDIS_AVAILABLE = True
     logging.info(f"Redis connection established successfully to {REDIS_HOST}:{REDIS_PORT}")

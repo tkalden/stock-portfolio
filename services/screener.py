@@ -20,9 +20,6 @@ class Screener():
 
     # init method or constructor
     def __init__(self):
-        self.metric_df = pd.DataFrame()
-        self.avg_metric_df = pd.DataFrame()
-        self.screener_df = pd.DataFrame()
         self.index = 'S&P 500' #default
         self.sector = 'Any'
      
