@@ -1,13 +1,32 @@
 import logging
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
-from scipy import stats
-import cvxpy as cp
-from sklearn.covariance import LedoitWolf
-from sklearn.decomposition import PCA
 import warnings
 warnings.filterwarnings('ignore')
+
+# Conditional imports for optional optimization packages
+try:
+    from scipy.optimize import minimize
+    from scipy import stats
+    SCIPY_AVAILABLE = True
+except ImportError:
+    SCIPY_AVAILABLE = False
+    logging.warning("scipy not available - advanced optimization features disabled")
+
+try:
+    import cvxpy as cp
+    CVXPY_AVAILABLE = True
+except ImportError:
+    CVXPY_AVAILABLE = False
+    logging.warning("cvxpy not available - convex optimization features disabled")
+
+try:
+    from sklearn.covariance import LedoitWolf
+    from sklearn.decomposition import PCA
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    SKLEARN_AVAILABLE = False
+    logging.warning("scikit-learn not available - machine learning features disabled")
 
 class AdvancedPortfolioOptimizer:
     """
@@ -74,6 +93,9 @@ class AdvancedPortfolioOptimizer:
         """
         Modern Portfolio Theory (Markowitz) optimization
         """
+        if not CVXPY_AVAILABLE:
+            raise ImportError("cvxpy is required for Markowitz optimization. Install with: pip install cvxpy")
+            
         n_assets = len(returns)
         
         # Define the optimization problem
@@ -121,6 +143,9 @@ class AdvancedPortfolioOptimizer:
         """
         Risk Parity optimization - equal risk contribution from each asset
         """
+        if not SCIPY_AVAILABLE:
+            raise ImportError("scipy is required for risk parity optimization. Install with: pip install scipy")
+            
         n_assets = len(returns)
         
         def risk_contribution(weights):

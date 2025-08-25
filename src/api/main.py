@@ -1,6 +1,7 @@
 import json
 import logging
 import threading
+import os
 from threading import Thread
 from datetime import datetime
 
@@ -14,7 +15,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import enums.enum as enum
-import services.news as news
+# News service disabled for Vercel deployment (bs4 dependency)
+# import services.news as news
 import utilities.helper as helper
 from services.chart import chart
 from services.portfolio import portfolio as buildPortfolio
@@ -43,11 +45,13 @@ chart = chart()
 def api_home():
    """API endpoint for home page data"""
    try:
-       news_df = news.get_news()
-       if not news_df.empty:
-           return jsonify({'data': news_df.to_dict('records')})
-       else:
-           return jsonify({'data': []})
+       # News service disabled for Vercel deployment
+       # news_df = news.get_news()
+       # if not news_df.empty:
+       #     return jsonify({'data': news_df.to_dict('records')})
+       # else:
+       #     return jsonify({'data': []})
+       return jsonify({'data': [], 'message': 'News service disabled for Vercel deployment'})
    except Exception as e:
        current_app.logger.error(f"Error fetching news: {e}")
        return jsonify({'data': [], 'error': str(e)})
@@ -153,7 +157,7 @@ def api_portfolio():
     # GET request - return current portfolio data
     return jsonify({'message': 'Portfolio API endpoint'})
 
-@main.route('/api/screener/data')
+@main.route('/api/screener/dat')
 def api_stock_data():  
     """API endpoint for stock data"""
     # Get sector and index from query parameters
@@ -165,7 +169,7 @@ def api_stock_data():
     
     stock_data = screenerService.get_screener_data()
     return jsonify({'data': stock_data.to_dict('records')})
-
+    
 @main.route('/api/delete-portfolio/<portfolio_id>', methods=['POST'])
 @login_required
 def api_delete_portfolio(portfolio_id):
@@ -708,11 +712,22 @@ def api_cache_info():
     try:
         from utilities.redis_data import redis_manager
         from utilities.constant import SECTORS, INDEX
+        import os
+        
+        # Get environment variables for debugging
+        env_info = {
+            'REDIS_HOST': os.getenv('REDIS_HOST', 'not_set'),
+            'REDIS_PORT': os.getenv('REDIS_PORT', 'not_set'),
+            'REDIS_DB': os.getenv('REDIS_DB', 'not_set'),
+            'REDIS_USERNAME': 'set' if os.getenv('REDIS_USERNAME') else 'not_set',
+            'REDIS_PASSWORD': 'set' if os.getenv('REDIS_PASSWORD') else 'not_set',
+        }
         
         if not redis_manager.available:
             return jsonify({
                 'success': False,
-                'error': 'Redis not available'
+                'error': 'Redis not available',
+                'env_info': env_info
             }), 503
         
         # Count cached combinations
@@ -745,7 +760,8 @@ def api_cache_info():
         
         return jsonify({
             'success': True,
-            'cache_info': cache_info
+            'cache_info': cache_info,
+            'env_info': env_info
         })
     except Exception as e:
         logging.error(f"Error getting cache info: {e}")
@@ -839,12 +855,35 @@ def api_cache_refresh():
 @main.route('/api/health', methods=['GET'])
 def api_health():
     """API health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'message': 'Stocknity API Server is running',
-        'version': '1.0.0',
-        'timestamp': pd.Timestamp.now().isoformat()
-    })
+    try:
+        from utilities.redis_data import redis_manager
+        import os
+        
+        # Get Redis connection status
+        redis_status = {
+            'available': redis_manager.available,
+            'host': os.getenv('REDIS_HOST', 'not_set'),
+            'port': os.getenv('REDIS_PORT', 'not_set'),
+            'has_username': os.getenv('REDIS_USERNAME') is not None,
+            'has_password': os.getenv('REDIS_PASSWORD') is not None,
+        }
+        
+        return jsonify({
+            'status': 'healthy',
+            'message': 'Stocknity API Server is running',
+            'version': '1.0.0',
+            'deployment_version': os.getenv('DEPLOYMENT_VERSION', 'unknown'),
+            'timestamp': pd.Timestamp.now().isoformat(),
+            'redis': redis_status
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': 'Stocknity API Server error',
+            'version': '1.0.0',
+            'timestamp': pd.Timestamp.now().isoformat(),
+            'error': str(e)
+        }), 500
 
 # Scheduler management endpoints
 @main.route('/api/scheduler/start', methods=['POST'])
@@ -942,5 +981,15 @@ def api_root():
     return jsonify({
         'message': 'Stocknity API Server',
         'status': 'running',
-        'version': '1.0.0'
+        'version': '1.0.0',
+        'deployment_version': os.getenv('DEPLOYMENT_VERSION', 'unknown')
+    })
+
+@main.route('/api/test', methods=['GET'])
+def api_test():
+    """Simple test endpoint without any imports"""
+    return jsonify({
+        'message': 'Test endpoint working',
+        'deployment_version': os.getenv('DEPLOYMENT_VERSION', 'unknown'),
+        'timestamp': datetime.now().isoformat()
     })

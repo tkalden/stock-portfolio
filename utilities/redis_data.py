@@ -16,22 +16,30 @@ REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)  # Required password for prod
 
 # Initialize Redis connection
 try:
-    if not REDIS_PASSWORD:
-        logging.warning("REDIS_PASSWORD not set - Redis connection may fail")
+    # Log connection parameters (without sensitive data)
+    logging.info(f"Attempting Redis connection to {REDIS_HOST}:{REDIS_PORT}, DB: {REDIS_DB}")
+    logging.info(f"Redis username provided: {REDIS_USERNAME is not None}")
+    logging.info(f"Redis password provided: {REDIS_PASSWORD is not None}")
     
     # Build connection parameters
     redis_params = {
         'host': REDIS_HOST,
         'port': REDIS_PORT,
         'db': REDIS_DB,
-        'decode_responses': True
+        'decode_responses': True,
+        'socket_connect_timeout': 5,  # 5 second timeout
+        'socket_timeout': 5
     }
     
     # Add authentication if provided
     if REDIS_USERNAME:
         redis_params['username'] = REDIS_USERNAME
+        logging.info(f"Using Redis username: {REDIS_USERNAME}")
     if REDIS_PASSWORD:
         redis_params['password'] = REDIS_PASSWORD
+        logging.info("Using Redis password: [HIDDEN]")
+    
+    logging.info(f"Redis connection parameters: {list(redis_params.keys())}")
     
     r = redis.Redis(**redis_params)
     r.ping()  # Test connection
@@ -39,8 +47,27 @@ try:
     logging.info(f"Redis connection established successfully to {REDIS_HOST}:{REDIS_PORT}")
 except Exception as e:
     logging.error(f"Redis connection failed: {e}")
-    REDIS_AVAILABLE = False
-    r = None
+    logging.error(f"Redis connection details - Host: {REDIS_HOST}, Port: {REDIS_PORT}, DB: {REDIS_DB}")
+    logging.error(f"Redis auth - Username: {REDIS_USERNAME is not None}, Password: {REDIS_PASSWORD is not None}")
+    
+    # Try without authentication as fallback
+    try:
+        logging.info("Attempting Redis connection without authentication as fallback")
+        r = redis.Redis(
+            host=REDIS_HOST,
+            port=REDIS_PORT,
+            db=REDIS_DB,
+            decode_responses=True,
+            socket_connect_timeout=5,
+            socket_timeout=5
+        )
+        r.ping()
+        REDIS_AVAILABLE = True
+        logging.info(f"Redis connection established without authentication to {REDIS_HOST}:{REDIS_PORT}")
+    except Exception as fallback_e:
+        logging.error(f"Redis fallback connection also failed: {fallback_e}")
+        REDIS_AVAILABLE = False
+        r = None
 
 class RedisDataManager:
     """Redis-based data manager for stock portfolio application"""

@@ -44,10 +44,10 @@ def create_app():
     setup_security_middleware(app)
     
     # Import and register blueprints
-    from api.auth import auth
+    from src.api.auth import auth
     app.register_blueprint(auth)
     
-    from api.main import main
+    from src.api.main import main
     app.register_blueprint(main)
     
     # Note: Async scheduler is started via API endpoints

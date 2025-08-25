@@ -2,6 +2,7 @@
 """
 Stocknity - Advanced Stock Portfolio Management System
 Main entry point for the Flask application
+Updated: 2025-08-25 - Fixed bs4 import issues
 """
 
 import os
@@ -18,8 +19,11 @@ except ImportError:
     # dotenv not installed, continue without it
     pass
 
-from core.app import create_app
+from core.app import app
 
 if __name__ == '__main__':
-    app = create_app()
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    # Use environment variable for port, default to 5001
+    port = int(os.environ.get('PORT', 5001))
+    # Disable debug mode in production
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(debug=debug, host='0.0.0.0', port=port)

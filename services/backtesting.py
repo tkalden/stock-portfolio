@@ -2,11 +2,24 @@ import logging
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy import stats
 import warnings
 warnings.filterwarnings('ignore')
+
+# Conditional imports for optional packages
+try:
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    PLOTTING_AVAILABLE = True
+except ImportError:
+    PLOTTING_AVAILABLE = False
+    logging.warning("matplotlib/seaborn not available - plotting features disabled")
+
+try:
+    from scipy import stats
+    SCIPY_AVAILABLE = True
+except ImportError:
+    SCIPY_AVAILABLE = False
+    logging.warning("scipy not available - statistical analysis features disabled")
 
 class PortfolioBacktester:
     """

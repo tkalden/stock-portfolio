@@ -16,16 +16,16 @@ test: ## Run tests
 	python -m pytest tests/ -v
 
 test-async: ## Test async data fetching system
-	python test_async_system.py
+	python tests/test_async_system.py
 
 test-ai: ## Test AI investment system
-	python test_ai_system.py
+	python tests/test_ai_system.py
 
 test-scheduler-config: ## Test scheduler configuration
-	python test_scheduler_config.py
+	python tests/test_scheduler_config.py
 
 demo-scheduler: ## Demo scheduler with different configurations
-	python demo_scheduler.py
+	python tests/demo_scheduler.py
 
 test-coverage: ## Run tests with coverage
 	python -m pytest tests/ --cov=src --cov-report=html

@@ -554,7 +554,7 @@ npm test
 - **[Financial Metrics Documentation](docs/FINANCIAL_METRICS.md)**: Comprehensive guide to financial calculations, methodologies, and industry standards
 - **[AI Investment System Documentation](docs/AI_INVESTMENT_SYSTEM.md)**: Advanced AI-powered investment system design and implementation
 - **[Async Data System Documentation](docs/ASYNC_DATA_SYSTEM.md)**: Detailed information about the background data processing system
-- **[Project Structure Documentation](PROJECT_STRUCTURE.md)**: Overview of the codebase organization
+- **[Project Structure Documentation](docs/PROJECT_STRUCTURE.md)**: Overview of the codebase organization
 
 ### Educational Resources
 
