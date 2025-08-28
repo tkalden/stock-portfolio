@@ -1,4 +1,4 @@
-.PHONY: help install test run clean docker-build docker-run k8s-deploy k8s-clean
+.PHONY: help install test run clean docker-build docker-run k8s-deploy k8s-clean cache-pre-warm
 
 help: ## Show this help message
 	@echo "Stocknity - Advanced Stock Portfolio Management System"
@@ -88,3 +88,9 @@ check: format lint type-check test ## Run all checks
 
 deploy: docker-build k8s-deploy ## Deploy to production
 	@echo "Deployed to production!"
+
+cache-pre-warm: ## Pre-warm the annual returns cache
+	python scripts/pre_warm_cache.py
+
+cache-status: ## Check cache status
+	curl -s https://stock-portfolio-theta.vercel.app/api/cache/annual-returns/status | python -m json.tool

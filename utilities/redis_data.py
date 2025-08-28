@@ -470,9 +470,9 @@ class RedisDataManager:
                 'source': 'yahoo_finance',
                 'version': '1.0'
             }
-            # Save with 24-hour TTL (86400 seconds)
-            self.r.setex(key, 24 * 60 * 60, json.dumps(data))
-            logging.info(f"Saved annual returns with {len(df)} records (TTL: 24h)")
+            # Save with 48-hour TTL (172800 seconds) for longer caching
+            self.r.setex(key, 48 * 60 * 60, json.dumps(data))
+            logging.info(f"Saved annual returns with {len(df)} records (TTL: 48h)")
             return True
         except Exception as e:
             logging.error(f"Error saving annual returns: {e}")

@@ -9,6 +9,7 @@ from datetime import datetime
 import pandas as pd
 from flask import Blueprint, request, redirect, url_for, jsonify, current_app
 from flask_login import current_user, login_required
+from src.core import api_login_required
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -157,7 +158,7 @@ def api_portfolio():
     # GET request - return current portfolio data
     return jsonify({'message': 'Portfolio API endpoint'})
 
-@main.route('/api/screener/dat')
+@main.route('/api/screener/data')
 def api_stock_data():  
     """API endpoint for stock data"""
     # Get sector and index from query parameters
@@ -475,7 +476,7 @@ def api_clear_built_portfolio():
     return jsonify({'success': True, 'message': 'Built portfolio cleared successfully'})
 
 @main.route('/api/portfolio/advanced', methods=['POST'])
-@login_required
+@api_login_required
 def api_advanced_portfolio():
     """API endpoint for advanced portfolio optimization"""
     try:
@@ -523,7 +524,7 @@ def api_advanced_portfolio():
         return jsonify({'success': False, 'error': str(e)})
 
 @main.route('/api/portfolio/compare-methods', methods=['POST'])
-@login_required
+@api_login_required
 def api_compare_optimization_methods():
     """API endpoint for comparing different optimization methods"""
     try:
@@ -583,7 +584,7 @@ def api_compare_optimization_methods():
         return jsonify({'success': False, 'error': str(e)})
 
 @main.route('/api/portfolio/backtest', methods=['POST'])
-@login_required
+@api_login_required
 def api_portfolio_backtest():
     """API endpoint for portfolio backtesting"""
     try:
@@ -851,6 +852,53 @@ def api_cache_refresh():
             'error': 'Failed to refresh cache'
         }), 500
 
+@main.route('/api/cache/pre-warm', methods=['POST'])
+def api_cache_pre_warm():
+    """Pre-warm the annual returns cache to avoid cold starts"""
+    try:
+        from services.annualReturn import AnnualReturn
+        annual_return = AnnualReturn()
+        success = annual_return.pre_warm_cache()
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Cache pre-warmed successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to pre-warm cache'
+            }), 500
+    except Exception as e:
+        logging.error(f"Error pre-warming cache: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to pre-warm cache'
+        }), 500
+
+@main.route('/api/cache/annual-returns/status', methods=['GET'])
+def api_annual_returns_cache_status():
+    """Get detailed status of annual returns cache"""
+    try:
+        from services.annualReturn import AnnualReturn
+        annual_return = AnnualReturn()
+        status = annual_return.get_cache_status()
+        is_fresh = annual_return.is_cache_fresh()
+        
+        return jsonify({
+            'success': True,
+            'cache_status': status,
+            'is_fresh': is_fresh,
+            'recommendation': 'pre_warm' if not is_fresh else 'cache_ok'
+        })
+    except Exception as e:
+        logging.error(f"Error getting annual returns cache status: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get cache status'
+        }), 500
+
 # Health check endpoint
 @main.route('/api/health', methods=['GET'])
 def api_health():
@@ -868,13 +916,22 @@ def api_health():
             'has_password': os.getenv('REDIS_PASSWORD') is not None,
         }
         
+        # Get authentication status
+        auth_status = {
+            'is_authenticated': current_user.is_authenticated,
+            'user_id': current_user.id if current_user.is_authenticated else None,
+            'session_configured': bool(app.config.get('SECRET_KEY')),
+            'vercel_environment': os.getenv('VERCEL') == '1'
+        }
+        
         return jsonify({
             'status': 'healthy',
             'message': 'Stocknity API Server is running',
             'version': '1.0.0',
             'deployment_version': os.getenv('DEPLOYMENT_VERSION', 'unknown'),
             'timestamp': pd.Timestamp.now().isoformat(),
-            'redis': redis_status
+            'redis': redis_status,
+            'auth': auth_status
         })
     except Exception as e:
         return jsonify({

@@ -18,6 +18,8 @@
     "env": {
         "FLASK_ENV": "production",
         "FLASK_DEBUG": "false",
-        "DEPLOYMENT_VERSION": "2025-08-25-v4"
+        "DEPLOYMENT_VERSION": "2025-08-25-v4",
+        "VERCEL": "1",
+        "ALLOWED_ORIGINS": "http://localhost:3000,http://localhost:3001,https://stocknity-ui.vercel.app"
     }
 }

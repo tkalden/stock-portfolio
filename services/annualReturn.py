@@ -122,15 +122,26 @@ class AnnualReturn:
     def get_annual_return_data(self):
         df = redis_manager.get_annual_returns()
         
-        # Check if data exists and has valid risk ranges (should include Medium risk stocks)
+        # Check if data exists and is valid
         if not df.empty and not df['expected_annual_return'].isna().all():
-            # Check if we have stocks in the Medium risk range (0.4-0.6)
-            medium_risk_stocks = df[(df['expected_annual_risk'].astype(float) > 0.4) & (df['expected_annual_risk'].astype(float) < 0.6)]
-            if len(medium_risk_stocks) > 0:
-                logging.info("Retrieved annual returns from Redis")
-                return df
+            # Check if we have a reasonable number of stocks (at least 100)
+            if len(df) >= 100:
+                # Check if cache is fresh (less than 12 hours old)
+                cache_status = redis_manager.get_annual_returns_cache_status()
+                if cache_status.get('status') == 'cached':
+                    ttl_seconds = cache_status.get('ttl_seconds', 0)
+                    # If TTL is more than 12 hours (43200 seconds), cache is fresh
+                    if ttl_seconds > 43200:
+                        logging.info(f"Retrieved fresh annual returns from Redis cache ({len(df)} stocks, {ttl_seconds//3600}h remaining)")
+                        return df
+                    else:
+                        logging.info(f"Annual returns cache is aging ({ttl_seconds//3600}h remaining), but still usable")
+                        return df
+                else:
+                    logging.info(f"Retrieved annual returns from Redis cache ({len(df)} stocks)")
+                    return df
             else:
-                logging.info("Annual returns in Redis don't have Medium risk stocks, regenerating...")
+                logging.info(f"Annual returns in Redis have only {len(df)} stocks, regenerating...")
         else:
             logging.info("Annual returns not found in Redis or invalid, calculating...")
         
@@ -184,7 +195,7 @@ class AnnualReturn:
                 df = pd.concat(all_results, axis=0, ignore_index=True)
                 logging.info(f"Successfully fetched data for {len(df)} stocks from Yahoo Finance")
                 
-                # Save to Redis manager
+                # Save to Redis manager with longer TTL (48 hours instead of 24)
                 redis_manager.save_annual_returns(df)
                 return df
             else:
@@ -296,14 +307,35 @@ class AnnualReturn:
             logging.info(f"Extended annual returns cache by {hours} hours")
         return success
     
-    def is_cache_fresh(self, max_age_hours: int = 6):
+    def is_cache_fresh(self, max_age_hours: int = 12):
         """Check if cache is fresh (less than max_age_hours old)"""
         status = self.get_cache_status()
         if status.get('status') == 'cached':
             ttl_seconds = status.get('ttl_seconds', 0)
-            # If TTL is more than (24 - max_age_hours), cache is fresh
-            return ttl_seconds > (24 - max_age_hours) * 3600
+            # If TTL is more than (48 - max_age_hours), cache is fresh
+            return ttl_seconds > (48 - max_age_hours) * 3600
         return False
+    
+    def pre_warm_cache(self):
+        """Pre-warm the annual returns cache to avoid cold starts"""
+        logging.info("Pre-warming annual returns cache...")
+        try:
+            # Check if cache is already fresh
+            if self.is_cache_fresh():
+                logging.info("Annual returns cache is already fresh, skipping pre-warm")
+                return True
+            
+            # Force refresh the cache
+            df = self.force_refresh_annual_returns()
+            if not df.empty:
+                logging.info(f"Successfully pre-warmed cache with {len(df)} stocks")
+                return True
+            else:
+                logging.error("Failed to pre-warm cache")
+                return False
+        except Exception as e:
+            logging.error(f"Error pre-warming cache: {e}")
+            return False
 
 if __name__ == "__main__":
     annualReturn = AnnualReturn()

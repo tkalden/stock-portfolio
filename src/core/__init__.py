@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_login import LoginManager
+from flask_login import LoginManager, login_required, current_user
 from flask_cors import CORS
 import os
 import secrets
@@ -8,6 +8,27 @@ from functools import wraps
 import logging
 
 login_manager = LoginManager()
+
+def api_login_required(f):
+    """Custom decorator for API endpoints that returns JSON instead of redirecting"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            if not current_user.is_authenticated:
+                return jsonify({
+                    'success': False,
+                    'error': 'Authentication required',
+                    'code': 'AUTH_REQUIRED'
+                }), 401
+            return f(*args, **kwargs)
+        except Exception as e:
+            logging.error(f"Authentication error in {f.__name__}: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Authentication error',
+                'code': 'AUTH_ERROR'
+            }), 401
+    return decorated_function
 
 def create_app():
     app = Flask(__name__)
@@ -24,6 +45,13 @@ def create_app():
         # Generate a secure key if not provided
         app.config['SECRET_KEY'] = secrets.token_hex(32)
         logging.warning("SECRET_KEY not set - generated temporary key. Set SECRET_KEY environment variable for production.")
+    
+    # Vercel-specific session configuration
+    if os.environ.get('VERCEL') == '1':
+        app.config['SESSION_TYPE'] = 'filesystem'
+        app.config['SESSION_FILE_DIR'] = '/tmp'
+        app.config['SESSION_FILE_THRESHOLD'] = 500
+        logging.info("Configured for Vercel serverless environment")
     
     app.config['REDIS_HOST'] = os.environ.get('REDIS_HOST', 'localhost')
     app.config['REDIS_PORT'] = int(os.environ.get('REDIS_PORT', 6379))
@@ -64,6 +92,11 @@ def configure_security(app):
         app.config['SESSION_COOKIE_HTTPONLY'] = True
         app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
         app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
+        # Vercel-specific session settings
+        app.config['SESSION_COOKIE_DOMAIN'] = None  # Allow all domains
+        app.config['SESSION_COOKIE_PATH'] = '/'
+        # Use a more permissive SameSite for Vercel
+        app.config['SESSION_COOKIE_SAMESITE'] = 'None'
     
     # Security headers
     if os.environ.get('ENABLE_SECURITY_HEADERS', 'true').lower() == 'true':
@@ -93,11 +126,36 @@ def configure_security(app):
             return response
 
 def configure_cors(app):
-    """Configure CORS with environment-based origins"""
-    allowed_origins = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:3001')
-    origins = [origin.strip() for origin in allowed_origins.split(',')]
+    """Configure CORS with environment-based origins and dynamic Vercel URL detection"""
     
-    CORS(app, origins=origins, supports_credentials=True)
+    # Base allowed origins
+    base_origins = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:3001')
+    origins = [origin.strip() for origin in base_origins.split(',')]
+    
+    # Add Vercel UI URL if provided
+    vercel_ui_url = os.environ.get('VERCEL_UI_URL')
+    if vercel_ui_url:
+        origins.append(vercel_ui_url.strip())
+    
+    # Add Vercel preview URLs pattern (for PR deployments)
+    vercel_preview_pattern = os.environ.get('VERCEL_PREVIEW_PATTERN', 'https://*.vercel.app')
+    if vercel_preview_pattern:
+        origins.append(vercel_preview_pattern)
+    
+    # Add production Vercel URL pattern
+    vercel_production_pattern = os.environ.get('VERCEL_PRODUCTION_PATTERN', 'https://stocknity-ui.vercel.app')
+    if vercel_production_pattern:
+        origins.append(vercel_production_pattern)
+    
+    # Remove duplicates and filter empty strings
+    origins = list(set([origin for origin in origins if origin]))
+    
+    logging.info(f"Configured CORS origins: {origins}")
+    
+    # Add Vercel-specific CORS headers
+    CORS(app, origins=origins, supports_credentials=True, 
+         allow_headers=['Content-Type', 'Authorization'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 def setup_security_middleware(app):
     """Setup security middleware"""
