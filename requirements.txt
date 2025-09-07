@@ -9,3 +9,5 @@ requests
 aiohttp
 yfinance
 schedule
+beautifulsoup4
+lxml

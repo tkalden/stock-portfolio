@@ -6,44 +6,44 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install Python dependencies
-	pip install -r requirements.txt
+	source venv/bin/activate && pip install -r requirements.txt
 
 install-dev: ## Install development dependencies
-	pip install -r requirements.txt
-	pip install pytest pytest-cov black flake8 mypy
+	source venv/bin/activate && pip install -r requirements.txt
+	source venv/bin/activate && pip install pytest pytest-cov black flake8 mypy
 
 test: ## Run tests
-	python -m pytest tests/ -v
+	source venv/bin/activate && python -m pytest tests/ -v
 
 test-async: ## Test async data fetching system
-	python tests/test_async_system.py
+	source venv/bin/activate && python tests/test_async_system.py
 
 test-ai: ## Test AI investment system
-	python tests/test_ai_system.py
+	source venv/bin/activate && python tests/test_ai_system.py
 
 test-scheduler-config: ## Test scheduler configuration
-	python tests/test_scheduler_config.py
+	source venv/bin/activate && python tests/test_scheduler_config.py
 
 demo-scheduler: ## Demo scheduler with different configurations
-	python tests/demo_scheduler.py
+	source venv/bin/activate && python tests/demo_scheduler.py
 
 test-coverage: ## Run tests with coverage
-	python -m pytest tests/ --cov=src --cov-report=html
+	source venv/bin/activate && python -m pytest tests/ --cov=src --cov-report=html
 
 format: ## Format code with black
-	black src/ tests/
+	source venv/bin/activate && black src/ tests/
 
 lint: ## Lint code with flake8
-	flake8 src/ tests/
+	source venv/bin/activate && flake8 src/ tests/
 
 type-check: ## Type check with mypy
-	mypy src/
+	source venv/bin/activate && mypy src/
 
 run: ## Run the Flask application
-	FLASK_APP=main.py python -m flask run --host=0.0.0.0 --port=5001
+	source venv/bin/activate && python main.py
 
 run-dev: ## Run in development mode
-	FLASK_DEBUG=true python main.py
+	source venv/bin/activate && FLASK_DEBUG=true python main.py
 
 docker-build: ## Build Docker image
 	docker build -t stocknity:latest .
@@ -90,7 +90,7 @@ deploy: docker-build k8s-deploy ## Deploy to production
 	@echo "Deployed to production!"
 
 cache-pre-warm: ## Pre-warm the annual returns cache
-	python scripts/pre_warm_cache.py
+	source venv/bin/activate && python scripts/pre_warm_cache.py
 
 cache-status: ## Check cache status
 	curl -s https://stock-portfolio-theta.vercel.app/api/cache/annual-returns/status | python -m json.tool

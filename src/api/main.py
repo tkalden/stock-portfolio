@@ -920,7 +920,7 @@ def api_health():
         auth_status = {
             'is_authenticated': current_user.is_authenticated,
             'user_id': current_user.id if current_user.is_authenticated else None,
-            'session_configured': bool(app.config.get('SECRET_KEY')),
+            'session_configured': bool(current_app.config.get('SECRET_KEY')),
             'vercel_environment': os.getenv('VERCEL') == '1'
         }
         

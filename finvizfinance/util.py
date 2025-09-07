@@ -95,10 +95,11 @@ def web_scrap(url):
     try:
         website = session.get(url, headers=headers, timeout=10)
         website.raise_for_status()
-        soup = BeautifulSoup(website.text, "lxml")
-    except requests.exceptions.HTTPError as err:
-        raise Exception(err)
-    except requests.exceptions.Timeout as err:
+        # Try lxml first, fallback to html.parser if not available
+        try:
+            soup = BeautifulSoup(website.text, "lxml")
+        except Exception:
+            soup = BeautifulSoup(website.text, "html.parser")
         raise Exception(err)
     return soup
 
