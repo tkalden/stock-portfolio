@@ -84,8 +84,7 @@ session = requests.Session()
 
 
 def web_scrap(url):
-    """Scrap website.
-
+    """scrap website and return beautiful soup
     Args:
         url(str): website
     Returns:
@@ -100,8 +99,11 @@ def web_scrap(url):
             soup = BeautifulSoup(website.text, "lxml")
         except Exception:
             soup = BeautifulSoup(website.text, "html.parser")
+        return soup
+    except requests.exceptions.HTTPError as err:
         raise Exception(err)
-    return soup
+    except requests.exceptions.Timeout as err:
+        raise Exception(err)
 
 
 def image_scrap(url, ticker, out_dir):
